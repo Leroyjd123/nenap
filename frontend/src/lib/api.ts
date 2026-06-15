@@ -33,5 +33,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     const body = (await res.json().catch(() => ({}))) as { message?: string };
     throw new ApiError(res.status, body.message ?? res.statusText);
   }
+  // 204 No Content (e.g. DELETE) has no body to parse.
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }

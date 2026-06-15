@@ -4,6 +4,10 @@ import { validateEnv } from './config/env';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { UsersModule } from './users/users.module';
+import { NotesModule } from './notes/notes.module';
+import { FoldersModule } from './folders/folders.module';
+import { TagsModule } from './tags/tags.module';
 
 @Module({
   imports: [
@@ -12,8 +16,12 @@ import { HealthModule } from './health/health.module';
       validate: validateEnv,
     }),
     PrismaModule,
+    UsersModule,
     AuthModule,
     HealthModule,
+    NotesModule,
+    FoldersModule,
+    TagsModule,
   ],
 })
 export class AppModule {}

@@ -25,19 +25,22 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 **Verified:** typecheck ✓ · 7 unit tests ✓ · lint ✓ · build ✓ (all green locally).
 **Remaining before "done":** provision Supabase + DB, run the first migration, verify a real email/password login end-to-end.
 
-## Phase 2 — Notes, Folders, Tags, Dashboard *(hybrid)*
+## Phase 2 — Notes, Folders, Tags, Dashboard *(hybrid)* — ✅ scaffolded (DB pending)
 **Goal:** the core notebook works.
 
-- [ ] Notes CRUD API (service + repository layers) + unit/integration tests
-- [ ] Folders API (create/rename/delete/move) + tests
-- [ ] Tags API (create/attach/detach) + tests
-- [ ] Component primitives from Hi-Fi: buttons, input/search-field, chip, tag, segmented, note-card, avatar, eyebrow/meta, modal+sheet, toast
-- [ ] Desktop `.d-shell` + mobile `.m-tabbar`/`.m-fab` shells
-- [ ] Dashboard: note-card grid, folder + "with recording" filters, recent notes
-- [ ] Tiptap editor with prose styling; save modal (folder + tags)
-- [ ] Empty states (encouraging microcopy) + skeleton loaders + optimistic updates
+- [x] Notes CRUD API (service layer, ownership enforced) + unit tests (6)
+- [x] Folders API (create/rename/delete; notes detach on folder delete)
+- [x] Tags API (list; connectOrCreate on note save — capture-first)
+- [x] Shared Zod contract enforced via `ZodValidationPipe`; `UsersService.ensureUser` lazy profile sync
+- [x] Component primitives from Hi-Fi: button, input, search-field, chip, tag, segmented, note-card, avatar, modal+sheet, toast, skeleton, empty-state
+- [x] Responsive shell: desktop sidebar (live folders + counts) + mobile header/FAB
+- [x] Dashboard: note-card grid, folder + "with recording" + tag filters, debounced search
+- [x] Tiptap editor with `.prose` styling; save modal (folder picker + tag input)
+- [x] Empty states (encouraging microcopy) + skeleton loaders + query invalidation
 
-**Milestone:** create, edit, organise, and delete real notes with folders and tags.
+**Milestone:** ✅ Notes/Folders/Tags CRUD wired end-to-end; dashboard + editor built to Hi-Fi.
+**Verified:** typecheck ✓ · lint ✓ · 13 unit tests ✓ · build ✓ (routes /, /login, /notes/new, /notes/[id]).
+**Remaining before "done":** run against a live DB (migration) + verify CRUD in the browser once Supabase is connected. Note View tabs (Enhanced/Original/Transcript) and recording arrive in Phases 3–4.
 
 ## Phase 3 — Recording & Storage *(hybrid)*
 **Goal:** capture audio calmly.
