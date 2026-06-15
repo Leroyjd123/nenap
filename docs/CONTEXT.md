@@ -74,10 +74,18 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - Repo cleanup done: removed duplicate `logo.svg`, moved master to `design/assets/logo-master.png`, added `.gitattributes` + `.markdownlint.json`. Phase 1 committed on `master` (1470900).
 - **Remaining:** live-DB verification once Supabase connected. Note View tabs + recording = Phases 3–4.
 
+## Supabase — partially wired (2026-06-15)
+- Project: `iohmtxsvrymrazyyakdo`. **URL + publishable key** provided and wired:
+  `frontend/.env.local` (auth-only browser client) and `backend/.env` (`SUPABASE_URL`).
+- Backend guard verifies tokens via the **JWKS endpoint** (asymmetric) with HS256 fallback — no JWT secret needed for `/me`.
+- New-key format → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (env.ts also accepts legacy anon).
+
+## Still needed from founder
+- **`DATABASE_URL`** (Supabase pooled connection string + DB password, Project Settings → Database) — required for the first `prisma migrate` and all Notes/Folders/Tags persistence.
+- **Supabase secret/service-role key** — for Storage signing in Phase 3.
+- Then: `make db-migrate`, and verify email/password login + note CRUD in the browser.
+
 ## Pending tasks / next up
-- **⚠️ DEFERRED — Supabase setup (founder):** create project, add real `DATABASE_URL`, `SUPABASE_URL`, anon key, service-role key, JWT secret to `.env` files. MCP configured in `.mcp.json` (project_ref `iohmtxsvrymrazyyakdo`) but **not yet authenticated** — `claude /mcp` in a real terminal when ready.
-- **Run first migration** once a DB exists: `make db-migrate` (schema is written, not yet applied).
-- **Verify** a real email/password login end-to-end after Supabase is connected.
 - **Then Phase 2** (Notes/Folders/Tags/Dashboard) — awaiting founder go.
 - Docker is NOT installed on the dev machine — needed for `make db-up`, or use Supabase directly.
 
