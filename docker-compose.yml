@@ -1,0 +1,23 @@
+# Local development stack. Requires Docker.
+# `make db-up` starts just Postgres; the app runs via `pnpm dev` on the host.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nenap-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nenap
+      POSTGRES_PASSWORD: nenap
+      POSTGRES_DB: nenap
+    ports:
+      - '5432:5432'
+    volumes:
+      - nenap_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nenap']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  nenap_pgdata:

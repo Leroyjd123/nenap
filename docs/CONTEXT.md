@@ -1,0 +1,84 @@
+# Nenap — Context & Decision Log
+
+> The single reference for *what we decided, why, what's done, and what's pending.*
+> Read this first when picking the project back up. Append new entries; don't rewrite history.
+
+## Roles
+- **Founder / product owner:** Leroy (leroy.social@gmail.com) — owns strategy & direction.
+- **Execution (CTO/Principal Eng/Staff Design/Tech Lead):** Claude Code agent (model: Opus 4.8).
+- **Protocol:** consult-first. Major product/design/architecture/security/business decisions need explicit founder approval. No phase auto-advances.
+
+## Where things live
+- `PLAN.md` — one-page roadmap & stack table (living).
+- `docs/` — PRD, USER_FLOWS, PHASES, TECHNICAL_STANDARDS, CONTEXT (this), DESIGN_STANDARDS.
+- `design/` — **Nenap Hi-Fi** prototype (binding visual spec) + `README.md` + `nenap/*.jsx`.
+- `design-system/nenap-tokens.css` — canonical design tokens (Tailwind v4 `@theme`), extracted from Hi-Fi.
+- `design/assets/logo-master.png` — brand mark master (firefly, 1536×1024, 2 MB — needs web-optimized export + favicon when branding is wired).
+- The earlier `DESIGN.md` spec was provided in chat only (never a repo file); **superseded** by the Hi-Fi design.
+
+## Approved decisions (chronological)
+
+### Architecture & stack
+- **Monorepo**, pnpm workspaces + Turborepo, shared `@nenap/types`.
+- **Frontend:** Next.js 15 (App Router), TypeScript, Tailwind v4, shadcn/ui, TanStack Query, Zustand, Tiptap.
+- **Backend:** NestJS + Prisma. *(Diverges from the original master doc's FastAPI/Python — founder chose all-TypeScript for end-to-end type safety.)*
+- **Supabase** kept: Auth, Storage, Postgres hosting. NestJS statelessly verifies Supabase JWTs.
+- **DB access:** backend-only gateway; no RLS for MVP; ownership in the service layer.
+- **AI:** Gemini 2.x **Flash** for transcript + enhancement. Backend owns all Gemini calls.
+- **Jobs:** in-process async + Postgres `ProcessingJob` state; auto-retry + stuck-job sweep + manual retry. No Redis/Celery for MVP.
+- **Schema:** full data model in one upfront Prisma migration.
+
+### Product & UX
+- **Capture is dual:** note-first (record within a note) AND record-first (from dashboard).
+- **Enhancement:** auto-runs on save when a recording exists; "Improve Again" = manual regen → new version. **Original never overwritten.** Non-destructive Enhanced/Original/Transcript tabs.
+- **Editor:** Tiptap markdown rich text, minimal chrome.
+- **New entities** beyond master doc: **Folder** (one per note) + **Tag** (many-to-many).
+- **Live transcript:** Web Speech API (live feel) + Gemini (canonical transcript on save). No paid STT for MVP.
+- **Autosave:** debounced server autosave + localStorage draft backup; not full offline-first.
+- **Dashboard:** reverse-chron note-card feed + filters (folder/tags/date/has-recording).
+- **AI is invisible:** one gentle "Improving your note" orb; no chatbot/persona.
+
+### Auth
+- **Email/password is active for MVP.** Google sign-in UI is wired but **dormant** (placeholder creds) until Google OAuth is configured later.
+
+### Process & quality
+- **Phasing:** hybrid — small reviewable slices for visual/AI, whole-phase drops for plumbing.
+- **Testing:** backend unit+integration as-we-go; Playwright E2E in Phase 6.
+- **Contract:** shared Zod in `packages/types` = single source of truth; OpenAPI auto-emitted.
+- **CI:** GitHub Actions from Phase 1 (lint/typecheck/test); deploys in Phase 7. Single prod env.
+- **Credentials path (Option B):** founder will provide **Supabase** credentials; Google stays placeholder.
+
+### Design
+- **`design/Nenap Hi-Fi.*` is the binding visual spec**, superseding DESIGN.md on conflict.
+- Fonts: **Newsreader + Hanken Grotesk + Spline Sans Mono** (replaced Literata/Inter).
+- Palette: bg `#faf8f2`, surface `#fffdf8`, ink `#2a2823`, accent/sage `#6f7d57`, clay `#b3705a`.
+- Rule: **sage = action/selection; clay = recording only.** Radius 14px; warm low-contrast shadows; density modes.
+
+## What we've done so far
+- Ran the full consultation: locked architecture, stack, product flows, process, and deep-tech decisions.
+- Founder provided **DESIGN.md** then the richer **Nenap Hi-Fi** design (now canonical) + logo.
+- Reconciled the design vs the plan; flagged & resolved font/palette/radius conflicts in the design's favour.
+- Extracted canonical tokens → `design-system/nenap-tokens.css`.
+- Updated `PLAN.md` to make Hi-Fi the source of truth; updated Phase 1/2 to build to it.
+- Authored this docs suite: PRD, USER_FLOWS, PHASES, TECHNICAL_STANDARDS, CONTEXT, DESIGN_STANDARDS.
+
+## Phase 1 — DONE (scaffolded & verified locally) ✅
+Built against **placeholder env**; all green locally: typecheck ✓ · 7 unit tests ✓ · lint ✓ · build ✓. Git initialised (not committed yet).
+- Monorepo (pnpm + Turborepo), `packages/types` (Zod + tests), NestJS backend (env validation, full Prisma schema, Supabase JWT guard, `/health` + `/me`, Swagger), Next.js 15 frontend (Hi-Fi tokens + fonts, themed Button/Input, Brand, Auth screen email/pw + dormant Google, dashboard shell + ConnectionStatus handshake), docker-compose (Postgres), GitHub Actions CI.
+- Decisions made while building: jose for JWT verify; global APP_GUARD + `@Public()`; `User.id` = Supabase auth uid; pnpm `onlyBuiltDependencies` allowlist; `.gitattributes` LF normalization; frontend test `--passWithNoTests`.
+
+## Pending tasks / next up
+- **⚠️ DEFERRED — Supabase setup (founder):** create project, add real `DATABASE_URL`, `SUPABASE_URL`, anon key, service-role key, JWT secret to `.env` files. MCP configured in `.mcp.json` (project_ref `iohmtxsvrymrazyyakdo`) but **not yet authenticated** — `claude /mcp` in a real terminal when ready.
+- **Run first migration** once a DB exists: `make db-migrate` (schema is written, not yet applied).
+- **Verify** a real email/password login end-to-end after Supabase is connected.
+- **Then Phase 2** (Notes/Folders/Tags/Dashboard) — awaiting founder go.
+- Docker is NOT installed on the dev machine — needed for `make db-up`, or use Supabase directly.
+
+## Risks & watch-items
+- `logo.svg` is 2 MB (likely embedded raster) — verify crispness; may need a lighter mark.
+- Web Speech API is Chrome/Edge-strong, weaker on Safari/Firefox (Gemini guarantees the stored transcript).
+- Supabase free-tier limits (fine for MVP); Railway cold starts (acceptable now).
+- Gemini cost — mitigated by Flash + recording length + monthly caps.
+
+## Decision rule for the future
+When a request conflicts with an approved decision here, **stop and confirm** rather than silently override. Update this log whenever a decision is made or changed.
