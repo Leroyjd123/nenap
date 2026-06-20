@@ -88,7 +88,8 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - **Only remaining manual step:** a human browser click-through (signup → note → dashboard) — every underlying layer is proven, so it's a formality. Frontend dev server + a real Supabase email signup needed (can't be done headlessly here).
 - Phase 2 merged to `master` (01c174c); feature branch deleted.
 
-## Phase 4 — BUILT (2026-06-15); live verify pending Gemini key
+## Phase 4 — DONE & verified live (2026-06-15)
+- **Verified:** real Gemini key (in `backend/.env`, gitignored) → "Improve" on a text note produced clean structured HTML, note `completed`, version 1. One call only (founder asked not to overuse the key). Audio-transcribe path uses the same client (exercise via browser recording).
 - `GeminiService` (model `gemini-2.5-flash` via `@google/genai`): `transcribe` (Files API, polls until ACTIVE) + `enhance` (HTML output, preserves user intent). Graceful when `GEMINI_API_KEY` is placeholder (throws → job retried/failed, never crashes).
 - `ProcessingService`: runs jobs (transcribe→save transcript→enhance→new EnhancedNoteVersion→note completed); auto-retry to maxAttempts then `failed`; `@Interval(15s)` sweep for queued + stuck (`processing` >3min); in-memory inFlight guard. Kicked off after recording `complete`; `improve()` queues an enhance job. Needs `ScheduleModule.forRoot()`.
 - Endpoints: `POST /notes/:id/improve`, `GET /notes/:id/recording/url` (signed playback). `StorageService.downloadFile` added.
