@@ -88,6 +88,12 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - **Only remaining manual step:** a human browser click-through (signup → note → dashboard) — every underlying layer is proven, so it's a formality. Frontend dev server + a real Supabase email signup needed (can't be done headlessly here).
 - Phase 2 merged to `master` (01c174c); feature branch deleted.
 
+## Dev/test notes (2026-06-15 bug-fix pass)
+- **Demo account (DEV-ONLY, remove before prod):** `ljdstore@yopmail.com` / `NenapDemo123!`, created confirmed via MCP SQL (auth.users + auth.identities). One-click button on the login page. Verified via the GoTrue token endpoint.
+- **Email confirmation requires a Supabase setting:** Authentication → URL Configuration → set Site URL `http://localhost:3000` and add redirect `http://localhost:3000/auth/callback` (and the prod equivalents). Otherwise the confirm link won't return to `/auth/callback`.
+- Routing now: `/notes/[id]` = read-only Note View (Enhanced/Original/Transcript tabs), `/notes/[id]/edit` = editor, `/notes/new` = create. Delete uses on-brand ConfirmModal. Folder creation in sidebar.
+- Open: #3 console errors (need user paste), #5 design fidelity pass (need screenshots/specifics).
+
 ## Still needed from founder (later)
 - **Supabase secret key** (`sb_secret_…`) — for Storage signing in Phase 3.
 - (Optional) DB password / `DATABASE_URL` only if we ever run Prisma migrate directly instead of via the MCP.
