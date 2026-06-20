@@ -80,10 +80,15 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - Backend guard verifies tokens via the **JWKS endpoint** (asymmetric) with HS256 fallback — no JWT secret needed for `/me`.
 - New-key format → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (env.ts also accepts legacy anon).
 
-## Still needed from founder
-- **`DATABASE_URL`** (Supabase pooled connection string + DB password, Project Settings → Database) — required for the first `prisma migrate` and all Notes/Folders/Tags persistence.
-- **Supabase secret/service-role key** — for Storage signing in Phase 3.
-- Then: `make db-migrate`, and verify email/password login + note CRUD in the browser.
+## Live DB — migration APPLIED & data model VERIFIED (2026-06-15, via Supabase MCP)
+- `init_nenap_schema` applied to project `iohmtxsvrymrazyyakdo` (region ap-northeast-1). All 9 tables present, 0 rows.
+- Data-model round-trip exercised via MCP execute_sql (now cleaned up, DB pristine): create user→folder→tag→note + dashboard join ✓; folder delete → note.folderId NULL (SetNull) ✓; note/user delete cascades ✓.
+- Security advisors: 9× `rls_enabled_no_policy` (INFO) — **intentional/safe**: RLS on + no policy locks the public PostgREST API; our backend uses the `postgres` role (bypasses RLS); frontend never queries DB directly. Two WARNs about pre-existing `public.rls_auto_enable()` (project artifact, not ours) — optionally `REVOKE EXECUTE ... FROM anon, authenticated`.
+- **⚠️ Gap:** the NestJS backend's runtime Prisma connection still has a placeholder password in `backend/.env` `DATABASE_URL`/`DIRECT_URL`. The MCP applied the schema, but the *app's* backend can't connect to the DB until the real DB password is filled in. Full app click-through (frontend→backend→DB) is pending that.
+
+## Still needed from founder (later)
+- **Supabase secret key** (`sb_secret_…`) — for Storage signing in Phase 3.
+- (Optional) DB password / `DATABASE_URL` only if we ever run Prisma migrate directly instead of via the MCP.
 
 ## Pending tasks / next up
 - **Then Phase 2** (Notes/Folders/Tags/Dashboard) — awaiting founder go.
