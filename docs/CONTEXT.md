@@ -84,7 +84,9 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - `init_nenap_schema` applied to project `iohmtxsvrymrazyyakdo` (region ap-northeast-1). All 9 tables present, 0 rows.
 - Data-model round-trip exercised via MCP execute_sql (now cleaned up, DB pristine): create user→folder→tag→note + dashboard join ✓; folder delete → note.folderId NULL (SetNull) ✓; note/user delete cascades ✓.
 - Security advisors: 9× `rls_enabled_no_policy` (INFO) — **intentional/safe**: RLS on + no policy locks the public PostgREST API; our backend uses the `postgres` role (bypasses RLS); frontend never queries DB directly. Two WARNs about pre-existing `public.rls_auto_enable()` (project artifact, not ours) — optionally `REVOKE EXECUTE ... FROM anon, authenticated`.
-- **⚠️ Gap:** the NestJS backend's runtime Prisma connection still has a placeholder password in `backend/.env` `DATABASE_URL`/`DIRECT_URL`. The MCP applied the schema, but the *app's* backend can't connect to the DB until the real DB password is filled in. Full app click-through (frontend→backend→DB) is pending that.
+- **Backend ↔ live DB VERIFIED (2026-06-15):** real DB password in `backend/.env` (gitignored). Prisma migration baselined via `migrate resolve --applied` → `migrate status` = "up to date". Runtime pooled connection (6543/pgbouncer) round-trip passed through the actual Prisma client: user→folder→note + connectOrCreate tag + list-with-tags + cascade delete on user removal. DB pristine.
+- **Only remaining manual step:** a human browser click-through (signup → note → dashboard) — every underlying layer is proven, so it's a formality. Frontend dev server + a real Supabase email signup needed (can't be done headlessly here).
+- Phase 2 merged to `master` (01c174c); feature branch deleted.
 
 ## Still needed from founder (later)
 - **Supabase secret key** (`sb_secret_…`) — for Storage signing in Phase 3.
