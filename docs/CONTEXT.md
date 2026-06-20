@@ -88,6 +88,11 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - **Only remaining manual step:** a human browser click-through (signup → note → dashboard) — every underlying layer is proven, so it's a formality. Frontend dev server + a real Supabase email signup needed (can't be done headlessly here).
 - Phase 2 merged to `master` (01c174c); feature branch deleted.
 
+## Dev/test notes (2026-06-15 bug-fix pass 2)
+- **Note-save 500 fixed:** `UsersService.ensureUser` now self-heals stale email-mirror rows (P2002) — happened because the demo auth user was recreated with a new id while `public.users` kept the old id under the same email. Verified live (demo login → create note → persists).
+- **Testing path = the dev demo-login button** (founder's choice). Real email/password auth is **deferred**: email confirmation stays ON in Supabase but unconfirmed accounts can't log in, so use the demo button. Before prod: either disable "Confirm email" or set Site URL + `/auth/callback` redirect.
+- Added: empty-note save guard (#1), auth-redirect error surfacing on `/` (#5), resend-email on verify screen (#4).
+
 ## Dev/test notes (2026-06-15 bug-fix pass)
 - **Demo account (DEV-ONLY, remove before prod):** `ljdstore@yopmail.com` / `NenapDemo123!`, created confirmed via MCP SQL (auth.users + auth.identities). One-click button on the login page. Verified via the GoTrue token endpoint.
 - **Email confirmation requires a Supabase setting:** Authentication → URL Configuration → set Site URL `http://localhost:3000` and add redirect `http://localhost:3000/auth/callback` (and the prod equivalents). Otherwise the confirm link won't return to `/auth/callback`.
