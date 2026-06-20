@@ -9,6 +9,7 @@ import type {
 } from '@nenap/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
+import { StorageService } from '../storage/storage.service';
 import type { AuthUser } from '../auth/auth-user';
 import { toNote, toNoteSummary } from '../common/mappers';
 
@@ -24,6 +25,7 @@ export class NotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly users: UsersService,
+    private readonly storage: StorageService,
   ) {}
 
   async list(user: AuthUser, query: ListNotesQuery): Promise<NoteSummary[]> {
@@ -102,8 +104,14 @@ export class NotesService {
 
   async remove(user: AuthUser, id: string): Promise<void> {
     await this.assertNoteOwned(user, id);
+    // Storage isn't cascade-linked to the DB, so remove the audio file first.
+    const recording = await this.prisma.recording.findUnique({
+      where: { noteId: id },
+      select: { storagePath: true },
+    });
     // Cascades remove recording, transcript, enhanced versions, and jobs.
     await this.prisma.note.delete({ where: { id } });
+    if (recording) await this.storage.remove(recording.storagePath);
   }
 
   // --- helpers ---

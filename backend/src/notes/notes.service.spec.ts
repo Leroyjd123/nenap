@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotesService } from './notes.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { UsersService } from '../users/users.service';
+import type { StorageService } from '../storage/storage.service';
 import type { AuthUser } from '../auth/auth-user';
 
 const USER: AuthUser = { id: 'user-1', email: 'a@b.com' };
@@ -20,11 +21,13 @@ function makeService() {
     folder: { findUnique: vi.fn() },
   };
   const users = { ensureUser: vi.fn().mockResolvedValue(undefined) };
+  const storage = { remove: vi.fn().mockResolvedValue(undefined) };
   const service = new NotesService(
     prisma as unknown as PrismaService,
     users as unknown as UsersService,
+    storage as unknown as StorageService,
   );
-  return { service, prisma, users };
+  return { service, prisma, users, storage };
 }
 
 const dbNote = (over: Record<string, unknown> = {}) => ({

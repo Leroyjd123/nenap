@@ -88,6 +88,13 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - **Only remaining manual step:** a human browser click-through (signup → note → dashboard) — every underlying layer is proven, so it's a formality. Frontend dev server + a real Supabase email signup needed (can't be done headlessly here).
 - Phase 2 merged to `master` (01c174c); feature branch deleted.
 
+## Phase 3 — DONE & verified live (2026-06-15)
+- Private Supabase Storage bucket `recordings` (100 MB, audio mimes). Backend `StorageService` (Supabase admin via **SUPABASE_SECRET_KEY** `sb_secret_…`, in `backend/.env`, gitignored) issues signed upload URLs; browser uploads direct via `uploadToSignedUrl`.
+- Endpoints: `POST /notes/:id/recording/sign` + `/complete` (persists metadata, note→processing, queues `transcribe` job). Path `{userId}/{noteId}.{ext}`, one recording per note.
+- Frontend: `useRecorder`, `useSpeechTranscript` (Web Speech live), WaveBars, editor recording rail (creates draft on first record), `/record` record-first screen, Record buttons (dashboard + mobile FAB).
+- **Verified live** the full loop (signed upload → file in bucket → recording row → processing → queued job), then cleaned up. Storage rows are protected — delete files via the Storage API, not SQL. Note delete now removes the stored audio too.
+- **Deferred:** file-upload path, inline transcript comments, recording playback in Note View. Gemini transcription/enhancement = Phase 4 (jobs sit `queued`).
+
 ## Dev/test notes (2026-06-15 bug-fix pass 2)
 - **Note-save 500 fixed:** `UsersService.ensureUser` now self-heals stale email-mirror rows (P2002) — happened because the demo auth user was recreated with a new id while `public.users` kept the old id under the same email. Verified live (demo login → create note → persists).
 - **Testing path = the dev demo-login button** (founder's choice). Real email/password auth is **deferred**: email confirmation stays ON in Supabase but unconfirmed accounts can't log in, so use the demo button. Before prod: either disable "Confirm email" or set Site URL + `/auth/callback` redirect.

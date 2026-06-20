@@ -42,17 +42,20 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 **Verified:** typecheck ✓ · lint ✓ · 13 unit tests ✓ · build ✓ (routes /, /login, /notes/new, /notes/[id]).
 **Remaining before "done":** run against a live DB (migration) + verify CRUD in the browser once Supabase is connected. Note View tabs (Enhanced/Original/Transcript) and recording arrive in Phases 3–4.
 
-## Phase 3 — Recording & Storage *(hybrid)*
+## Phase 3 — Recording & Storage *(hybrid)* — ✅ done & verified live
 **Goal:** capture audio calmly.
 
-- [ ] In-browser WebM/Opus recording; waveform + timer; clay recording language
-- [ ] Live transcript feed (Web Speech API)
-- [ ] Signed-URL direct upload to Supabase Storage (backend issues URL)
-- [ ] Upload-existing-recording path
-- [ ] Inline transcript comments → note content
-- [ ] Recording metadata persisted (duration, file ref, mime)
+- [x] In-browser WebM/Opus recording (`useRecorder`); waveform + timer; clay language
+- [x] Live transcript feed (Web Speech API, `useSpeechTranscript`)
+- [x] Signed-URL direct upload to Supabase Storage (private `recordings` bucket; backend issues URL)
+- [~] Upload-existing-recording path — **deferred** (founder choice)
+- [~] Inline transcript comments → note content — **deferred** to Phase 4/5
+- [x] Recording metadata persisted (duration, size, mime); note → processing; transcribe job queued
+- [x] Note-first recording rail (editor) + record-first screen (`/record`) + dashboard/mobile Record buttons
+- [x] Deleting a note also removes its stored audio (storage isn't cascade-linked)
 
-**Milestone:** record from a note and from the dashboard; audio lands in storage.
+**Milestone:** ✅ verified end-to-end live — record → signed upload → file in bucket → recording row → note `processing` → `transcribe/queued` job. 17 backend tests; typecheck/lint/build green.
+**Note:** playback (signed download URL in Note View) not yet wired — small follow-up; Phase 4 fills the transcript/enhanced tabs.
 
 ## Phase 4 — Gemini Processing *(hybrid)*
 **Goal:** the gentle AI moment.
