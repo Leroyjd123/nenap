@@ -7,6 +7,7 @@ import type {
 } from '@nenap/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { ProcessingService } from '../processing/processing.service';
 import { toRecording } from '../common/mappers';
 import type { AuthUser } from '../auth/auth-user';
 
@@ -23,6 +24,7 @@ export class RecordingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly processing: ProcessingService,
   ) {}
 
   /**
@@ -74,7 +76,16 @@ export class RecordingsService {
       }),
     ]);
 
+    this.processing.kickoff(noteId); // start transcribe + enhance now (sweep is the backstop)
     return toRecording(updated);
+  }
+
+  /** Returns a short-lived signed URL to play back the note's recording. */
+  async getPlaybackUrl(user: AuthUser, noteId: string): Promise<{ url: string | null }> {
+    await this.assertNoteOwned(user, noteId);
+    const recording = await this.prisma.recording.findUnique({ where: { noteId } });
+    if (!recording) return { url: null };
+    return { url: await this.storage.createSignedDownloadUrl(recording.storagePath) };
   }
 
   private async assertNoteOwned(user: AuthUser, noteId: string): Promise<void> {

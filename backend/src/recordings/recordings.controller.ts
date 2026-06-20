@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CompleteRecordingInput, SignRecordingInput } from '@nenap/types';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -28,5 +28,10 @@ export class RecordingsController {
     @Body(new ZodValidationPipe(CompleteRecordingInput)) body: CompleteRecordingInput,
   ) {
     return this.recordings.complete(user, noteId, body);
+  }
+
+  @Get('url')
+  playbackUrl(@CurrentUser() user: AuthUser, @Param('noteId') noteId: string) {
+    return this.recordings.getPlaybackUrl(user, noteId);
   }
 }

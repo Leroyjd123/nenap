@@ -49,6 +49,17 @@ export class StorageService {
     return { path: data.path, token: data.token, signedUrl: data.signedUrl };
   }
 
+  /** Downloads a stored object's bytes (server-side, for sending to Gemini). */
+  async downloadFile(path: string): Promise<Blob> {
+    if (!this.client) throw new ServiceUnavailableException('Storage is not configured yet');
+    const { data, error } = await this.client.storage.from(this.bucket).download(path);
+    if (error || !data) {
+      this.logger.error(`download failed for ${path}: ${error?.message}`);
+      throw new ServiceUnavailableException('Could not download recording');
+    }
+    return data;
+  }
+
   /** A time-limited URL to play back / download a stored recording. */
   async createSignedDownloadUrl(path: string, expiresInSec = 3600): Promise<string | null> {
     if (!this.client) return null;

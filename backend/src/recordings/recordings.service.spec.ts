@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RecordingsService } from './recordings.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { StorageService } from '../storage/storage.service';
+import type { ProcessingService } from '../processing/processing.service';
 import type { AuthUser } from '../auth/auth-user';
 
 const USER: AuthUser = { id: 'user-1', email: 'a@b.com' };
@@ -18,11 +19,13 @@ function makeService() {
     createSignedUpload: vi.fn().mockResolvedValue({ path: 'p', token: 't', signedUrl: 'https://x/u' }),
     remove: vi.fn(),
   };
+  const processing = { kickoff: vi.fn() };
   const service = new RecordingsService(
     prisma as unknown as PrismaService,
     storage as unknown as StorageService,
+    processing as unknown as ProcessingService,
   );
-  return { service, prisma, storage };
+  return { service, prisma, storage, processing };
 }
 
 describe('RecordingsService.sign', () => {

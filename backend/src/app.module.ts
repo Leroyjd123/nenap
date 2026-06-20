@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { validateEnv } from './config/env';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -9,6 +10,8 @@ import { NotesModule } from './notes/notes.module';
 import { FoldersModule } from './folders/folders.module';
 import { TagsModule } from './tags/tags.module';
 import { StorageModule } from './storage/storage.module';
+import { GeminiModule } from './gemini/gemini.module';
+import { ProcessingModule } from './processing/processing.module';
 import { RecordingsModule } from './recordings/recordings.module';
 
 @Module({
@@ -17,10 +20,13 @@ import { RecordingsModule } from './recordings/recordings.module';
       isGlobal: true,
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     UsersModule,
     AuthModule,
     StorageModule,
+    GeminiModule,
+    ProcessingModule,
     HealthModule,
     NotesModule,
     FoldersModule,

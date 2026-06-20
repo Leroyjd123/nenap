@@ -57,16 +57,17 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 **Milestone:** ✅ verified end-to-end live — record → signed upload → file in bucket → recording row → note `processing` → `transcribe/queued` job. 17 backend tests; typecheck/lint/build green.
 **Note:** playback (signed download URL in Note View) not yet wired — small follow-up; Phase 4 fills the transcript/enhanced tabs.
 
-## Phase 4 — Gemini Processing *(hybrid)*
+## Phase 4 — Gemini Processing *(hybrid)* — ✅ built (Gemini key pending for live verify)
 **Goal:** the gentle AI moment.
 
-- [ ] Gemini orchestration service (transcript + enhancement), backend-only
-- [ ] ProcessingJob lifecycle: auto-retry (max 3, backoff) + periodic stuck-job sweep + manual retry
-- [ ] Note view tabs: Enhanced / Original / Transcript
-- [ ] "Improving your note" orb moment + staggered blur-up reveal on the frontend
-- [ ] Status surfacing (processing/failed/completed) with calm feedback
+- [x] GeminiService (Gemini 2.5 Flash via @google/genai): transcribe (Files API) + enhance; backend-only; graceful when unconfigured
+- [x] ProcessingService: run job (transcribe→enhance), auto-retry (max 3) + `@Interval` stuck-job sweep + manual retry; kicks off after save
+- [x] Note view tabs filled: Enhanced (latest version) / Original / Transcript (+ audio playback via signed URL)
+- [x] "Improving your note" orb overlay; Note View polls while processing; enhanced reveals
+- [x] Status surfacing (processing/failed/completed); failed shows Retry
+- [x] `POST /notes/:id/improve` (new EnhancedNoteVersion; original untouched); `GET /notes/:id/recording/url`
 
-**Milestone:** save a recorded note → watch it become an enhanced note; original preserved.
+**Milestone:** built end-to-end; typecheck/lint/build green, 21 backend tests. **Live verify pending the Gemini API key** (scaffolded on placeholder per founder choice).
 
 ## Phase 5 — Autosave, Improve Again, Search *(hybrid)*
 - [ ] Debounced server autosave + localStorage draft + restoration prompt

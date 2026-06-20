@@ -16,6 +16,7 @@ export const envSchema = z.object({
   SUPABASE_JWT_SECRET: z.string().min(1).default('placeholder-jwt-secret-change-me'),
   RECORDINGS_BUCKET: z.string().default('recordings'),
   GEMINI_API_KEY: z.string().default('placeholder-gemini-key'),
+  GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
 });
 
 export type Env = z.infer<typeof envSchema>;

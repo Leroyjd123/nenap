@@ -1,0 +1,133 @@
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
+import type { JobType, ProcessingJob } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+import { GeminiService } from '../gemini/gemini.service';
+import type { AuthUser } from '../auth/auth-user';
+
+const STUCK_AFTER_MS = 3 * 60 * 1000; // re-queue jobs stuck 'processing' this long
+
+@Injectable()
+export class ProcessingService {
+  private readonly logger = new Logger(ProcessingService.name);
+  private readonly inFlight = new Set<string>(); // guards against double-running a job
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+    private readonly gemini: GeminiService,
+  ) {}
+
+  /** Fire-and-forget kick after a recording is saved or "Improve again" is tapped. */
+  kickoff(noteId: string): void {
+    void this.runQueuedForNote(noteId).catch((e) =>
+      this.logger.error(`kickoff failed for note ${noteId}: ${(e as Error).message}`),
+    );
+  }
+
+  /** "Improve again" — queue an enhance-only job and run it now. */
+  async improve(user: AuthUser, noteId: string): Promise<void> {
+    const note = await this.prisma.note.findUnique({ where: { id: noteId }, select: { userId: true } });
+    if (!note) throw new NotFoundException('Note not found');
+    if (note.userId !== user.id) throw new ForbiddenException();
+
+    await this.prisma.note.update({ where: { id: noteId }, data: { status: 'processing' } });
+    await this.prisma.processingJob.create({ data: { noteId, type: 'enhance', status: 'queued' } });
+    this.kickoff(noteId);
+  }
+
+  private async runQueuedForNote(noteId: string): Promise<void> {
+    const job = await this.prisma.processingJob.findFirst({
+      where: { noteId, status: 'queued' },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (job) await this.runJob(job);
+  }
+
+  /** Periodic sweep: pick up queued jobs and re-queue stuck ones. */
+  @Interval(15000)
+  async sweep(): Promise<void> {
+    const stuckBefore = new Date(Date.now() - STUCK_AFTER_MS);
+    const jobs = await this.prisma.processingJob.findMany({
+      where: {
+        OR: [{ status: 'queued' }, { status: 'processing', updatedAt: { lt: stuckBefore } }],
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 5,
+    });
+    for (const job of jobs) {
+      await this.runJob(job).catch((e) =>
+        this.logger.error(`sweep job ${job.id} failed: ${(e as Error).message}`),
+      );
+    }
+  }
+
+  /** Runs a single job: transcribe (if audio) + enhance, with retry/backoff semantics. */
+  private async runJob(job: ProcessingJob): Promise<void> {
+    if (this.inFlight.has(job.id)) return;
+    this.inFlight.add(job.id);
+    try {
+      await this.prisma.processingJob.update({
+        where: { id: job.id },
+        data: { status: 'processing', attempts: { increment: 1 }, startedAt: new Date(), error: null },
+      });
+
+      await this.execute(job.noteId, job.type);
+
+      await this.prisma.$transaction([
+        this.prisma.processingJob.update({
+          where: { id: job.id },
+          data: { status: 'completed', finishedAt: new Date() },
+        }),
+        this.prisma.note.update({ where: { id: job.noteId }, data: { status: 'completed' } }),
+      ]);
+    } catch (err) {
+      const message = (err as Error).message ?? 'Processing failed';
+      const attempts = job.attempts + 1;
+      const willRetry = attempts < job.maxAttempts;
+      this.logger.warn(`job ${job.id} (${job.type}) failed [${attempts}/${job.maxAttempts}]: ${message}`);
+      await this.prisma.processingJob.update({
+        where: { id: job.id },
+        data: { status: willRetry ? 'queued' : 'failed', error: message, finishedAt: willRetry ? null : new Date() },
+      });
+      if (!willRetry) {
+        await this.prisma.note.update({ where: { id: job.noteId }, data: { status: 'failed' } });
+      }
+    } finally {
+      this.inFlight.delete(job.id);
+    }
+  }
+
+  /** The actual work: produce a transcript (when audio exists) and an enhanced version. */
+  private async execute(noteId: string, type: JobType): Promise<void> {
+    const note = await this.prisma.note.findUnique({
+      where: { id: noteId },
+      include: { recording: true, transcript: true },
+    });
+    if (!note) throw new Error('Note no longer exists');
+
+    let transcriptText = note.transcript?.content ?? '';
+
+    if (type === 'transcribe' && note.recording) {
+      const blob = await this.storage.downloadFile(note.recording.storagePath);
+      transcriptText = await this.gemini.transcribe(blob, note.recording.mimeType);
+      await this.prisma.transcript.upsert({
+        where: { noteId },
+        update: { content: transcriptText, source: 'gemini' },
+        create: { noteId, content: transcriptText, source: 'gemini' },
+      });
+    }
+
+    const enhanced = await this.gemini.enhance(note.originalContent, transcriptText);
+
+    const last = await this.prisma.enhancedNoteVersion.findFirst({
+      where: { noteId },
+      orderBy: { version: 'desc' },
+      select: { version: true },
+    });
+    await this.prisma.enhancedNoteVersion.create({
+      data: { noteId, version: (last?.version ?? 0) + 1, content: enhanced },
+    });
+  }
+}

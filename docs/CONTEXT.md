@@ -88,6 +88,13 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - **Only remaining manual step:** a human browser click-through (signup → note → dashboard) — every underlying layer is proven, so it's a formality. Frontend dev server + a real Supabase email signup needed (can't be done headlessly here).
 - Phase 2 merged to `master` (01c174c); feature branch deleted.
 
+## Phase 4 — BUILT (2026-06-15); live verify pending Gemini key
+- `GeminiService` (model `gemini-2.5-flash` via `@google/genai`): `transcribe` (Files API, polls until ACTIVE) + `enhance` (HTML output, preserves user intent). Graceful when `GEMINI_API_KEY` is placeholder (throws → job retried/failed, never crashes).
+- `ProcessingService`: runs jobs (transcribe→save transcript→enhance→new EnhancedNoteVersion→note completed); auto-retry to maxAttempts then `failed`; `@Interval(15s)` sweep for queued + stuck (`processing` >3min); in-memory inFlight guard. Kicked off after recording `complete`; `improve()` queues an enhance job. Needs `ScheduleModule.forRoot()`.
+- Endpoints: `POST /notes/:id/improve`, `GET /notes/:id/recording/url` (signed playback). `StorageService.downloadFile` added.
+- Frontend: `EnhancingOverlay` orb; NoteView polls while processing (`useNote(id,{poll})`), fills Enhanced/Transcript tabs, audio player, Improve-again, failed→Retry.
+- **TO VERIFY:** add real `GEMINI_API_KEY` to `backend/.env` (aistudio.google.com/apikey) → record a note → transcript + enhanced note appear. 21 backend tests; all green.
+
 ## Phase 3 — DONE & verified live (2026-06-15)
 - Private Supabase Storage bucket `recordings` (100 MB, audio mimes). Backend `StorageService` (Supabase admin via **SUPABASE_SECRET_KEY** `sb_secret_…`, in `backend/.env`, gitignored) issues signed upload URLs; browser uploads direct via `uploadToSignedUrl`.
 - Endpoints: `POST /notes/:id/recording/sign` + `/complete` (persists metadata, note→processing, queues `transcribe` job). Path `{userId}/{noteId}.{ext}`, one recording per note.

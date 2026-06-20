@@ -46,11 +46,13 @@ export function useNotes(
   });
 }
 
-export function useNote(id: string) {
+export function useNote(id: string, opts?: { poll?: boolean }) {
   return useQuery({
     queryKey: qk.note(id),
     queryFn: () => apiFetch<Note>(`/notes/${id}`),
     enabled: !!id,
+    // While a note is processing, poll so the enhanced note appears when ready.
+    refetchInterval: (q) => (opts?.poll && q.state.data?.status === 'processing' ? 2500 : false),
   });
 }
 
@@ -101,5 +103,27 @@ export function useDeleteNote() {
   return useMutation({
     mutationFn: (id: string) => apiFetch<void>(`/notes/${id}`, { method: 'DELETE' }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['notes'] }),
+  });
+}
+
+/** "Improve again" — re-runs enhancement; the note returns to processing. */
+export function useImproveNote(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiFetch<{ status: string }>(`/notes/${id}/improve`, { method: 'POST' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.note(id) });
+      void qc.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+/** Short-lived signed URL for playing back a note's recording. */
+export function useRecordingUrl(noteId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['recording-url', noteId],
+    queryFn: () => apiFetch<{ url: string | null }>(`/notes/${noteId}/recording/url`),
+    enabled,
+    staleTime: 50 * 60 * 1000,
   });
 }
