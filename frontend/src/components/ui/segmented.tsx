@@ -10,21 +10,15 @@ interface SegmentedProps<T extends string> {
 /** Segmented control (.seg) — e.g. Enhanced / Original / Transcript. */
 export function Segmented<T extends string>({ options, value, onChange, block }: SegmentedProps<T>) {
   return (
-    <div className={cn('bg-surface-3 rounded-sm p-[3px] gap-[2px]', block ? 'flex' : 'inline-flex')}>
+    <div className={cn('seg', block && 'block')}>
       {options.map((opt) => (
-        <button
+        <span
           key={opt.value}
-          type="button"
+          className={value === opt.value ? 'on' : ''}
           onClick={() => onChange(opt.value)}
-          className={cn(
-            'text-[13px] font-semibold px-[13px] py-1.5 rounded-[calc(var(--r-sm)-2px)]',
-            'transition-all duration-150 whitespace-nowrap cursor-pointer',
-            block && 'flex-1 text-center',
-            value === opt.value ? 'bg-surface text-ink shadow-1' : 'text-ink-2',
-          )}
         >
           {opt.label}
-        </button>
+        </span>
       ))}
     </div>
   );

@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Icon } from '@/components/ui/icon';
 import { isSupabaseConfigured } from '@/lib/env';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
@@ -13,6 +13,11 @@ type Mode = 'signin' | 'signup';
 // DEV-ONLY demo account — remove before production.
 const DEMO_EMAIL = 'ljdstore@yopmail.com';
 const DEMO_PASSWORD = 'NenapDemo123!';
+
+const GRADIENT_BG = {
+  background:
+    'radial-gradient(900px 500px at 50% -10%, var(--accent-tint), transparent 60%), var(--bg)',
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,7 +28,6 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
-  // DEV-ONLY: one-click sign-in to the shared demo account.
   async function handleDemo() {
     setError(null);
     setBusy(true);
@@ -46,16 +50,13 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
     if (!isSupabaseConfigured) {
-      setError('Sign-in is available once Supabase is connected. Hang tight.');
+      setError('Sign-in is available once Supabase is connected.');
       return;
     }
-
     setBusy(true);
     try {
       const supabase = getSupabaseBrowserClient();
-
       if (mode === 'signup') {
         const { data, error: authError } = await supabase.auth.signUp({
           email,
@@ -66,12 +67,11 @@ export default function LoginPage() {
           setError(authError.message);
           return;
         }
-        // With email confirmation on, no session is returned until the link is clicked.
         if (!data.session) {
           setSentTo(email);
           return;
         }
-        router.push('/'); // confirmation disabled → already signed in
+        router.push('/');
       } else {
         const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) {
@@ -85,27 +85,30 @@ export default function LoginPage() {
     }
   }
 
-  // Post-signup: calm "check your inbox" confirmation (no silent redirect).
   if (sentTo) {
     return (
-      <main className="min-h-screen grid place-items-center px-5 py-16">
-        <div className="w-full max-w-[400px] text-center flex flex-col items-center">
-          <Brand className="text-[34px] mb-5" />
-          <div
-            className="w-14 h-14 rounded-full grid place-items-center mb-4"
-            style={{ background: 'var(--accent-tint)' }}
-            aria-hidden
-          >
-            <span className="w-3 h-3 rounded-full" style={{ background: 'var(--accent)' }} />
+      <main className="screen min-h-screen grid place-items-center px-7 py-10" style={GRADIENT_BG}>
+        <div className="col center text-center" style={{ maxWidth: 320, margin: '0 auto' }}>
+          <div className="brand" style={{ fontSize: 38, marginBottom: 14 }}>
+            Nenap<span className="dot">.</span>
           </div>
-          <h1 className="font-display text-[22px] font-medium text-ink m-0">Check your inbox</h1>
-          <p className="text-ink-2 text-sm mt-2 leading-relaxed">
-            We sent a confirmation link to <span className="text-ink font-semibold">{sentTo}</span>.
+          <div className="enh-orb" style={{ width: 56, height: 56, marginBottom: 18 }}>
+            <div className="ring" />
+            <div className="ring r2" />
+            <div className="core" style={{ inset: 14 }}>
+              <Icon name="check" size={20} />
+            </div>
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, margin: 0 }}>
+            Check your inbox
+          </h1>
+          <p style={{ color: 'var(--ink-2)', fontSize: 14, marginTop: 8, lineHeight: 1.5 }}>
+            We sent a confirmation link to <strong style={{ color: 'var(--ink)' }}>{sentTo}</strong>.
             Click it to finish creating your account.
           </p>
           <button
-            type="button"
-            className="text-accent-deep font-semibold text-sm mt-6 hover:underline"
+            className="btn btn-ghost btn-sm"
+            style={{ marginTop: 20 }}
             onClick={() => {
               setSentTo(null);
               setMode('signin');
@@ -119,94 +122,57 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center px-5 py-16">
-      <div className="w-full max-w-[400px]">
-        <div className="flex flex-col items-center text-center mb-8">
-          <Brand className="text-[34px] mb-4" />
-          <h1 className="font-display text-[22px] font-medium text-ink m-0">
-            {mode === 'signin' ? 'Welcome back' : 'Make a little space to remember'}
-          </h1>
-          <p className="text-ink-2 text-sm mt-2 leading-relaxed">
-            Focus on the moment. Nenap remembers the rest.
-          </p>
+    <main className="screen min-h-screen grid place-items-center px-7 py-10" style={GRADIENT_BG}>
+      <div className="col center" style={{ gap: 15, width: '100%', maxWidth: 320, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div className="brand" style={{ fontSize: 38, marginBottom: 2 }}>
+          Nenap<span className="dot">.</span>
         </div>
+        <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--ink-2)', fontSize: 17, margin: '0 0 14px' }}>
+          stay present, keep what matters
+        </p>
 
-        <div className="bg-surface border border-line rounded-[var(--r)] shadow-1 p-6">
-          {/* Google — wired but dormant until Google OAuth is configured */}
-          <Button
-            variant="soft"
-            size="block"
-            type="button"
-            disabled
-            title="Google sign-in arrives once it's configured"
-          >
-            Continue with Google
-            <span className="eyebrow ml-1">soon</span>
-          </Button>
-
-          <div className="flex items-center gap-3 my-4 text-ink-3">
-            <span className="h-px flex-1 bg-line" />
-            <span className="eyebrow">or</span>
-            <span className="h-px flex-1 bg-line" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              required
-              minLength={6}
-            />
-
-            {error && <p className="text-rec text-[13px] m-0">{error}</p>}
-
-            <Button type="submit" size="block" disabled={busy}>
-              {busy ? 'One moment…' : mode === 'signin' ? 'Continue with email' : 'Create account'}
-            </Button>
-          </form>
-
-          {!isSupabaseConfigured && (
-            <p className="text-ink-3 text-[12px] text-center mt-4 leading-relaxed">
-              Auth is inert until Supabase is connected — the screen is real, the keys aren&apos;t yet.
-            </p>
-          )}
-        </div>
-
-        {/* DEV-ONLY demo access — remove before production */}
-        <button
-          type="button"
-          onClick={handleDemo}
-          disabled={busy}
-          className="mt-4 w-full text-center text-[12px] font-mono tracking-[0.04em] text-ink-3
-                     hover:text-accent-deep transition-colors"
-        >
-          ↳ continue to demo account (dev only)
+        <button className="btn btn-soft btn-block btn-lg" type="button" disabled title="Google sign-in arrives once it's configured">
+          <Icon name="google" size={19} /> Continue with Google
         </button>
 
-        <p className="text-center text-sm text-ink-2 mt-6">
-          {mode === 'signin' ? 'New to Nenap?' : 'Already have an account?'}{' '}
-          <button
-            type="button"
-            className="text-accent-deep font-semibold hover:underline"
+        <div className="row" style={{ display: 'flex', width: '100%', gap: 12, alignItems: 'center', color: 'var(--ink-3)' }}>
+          <hr className="hr" style={{ flex: 1 }} />
+          <span className="meta">or</span>
+          <hr className="hr" style={{ flex: 1 }} />
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 15 }}>
+          <Input type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required minLength={6} />
+          {error && <p style={{ color: 'var(--rec)', fontSize: 13, margin: 0 }}>{error}</p>}
+          <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={busy}>
+            {busy ? 'One moment…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+          </button>
+        </form>
+
+        <p style={{ color: 'var(--ink-2)', fontSize: 13.5, margin: '4px 0 0' }}>
+          {mode === 'signin' ? 'No account? ' : 'Already have one? '}
+          <span
+            style={{ color: 'var(--accent-deep)', fontWeight: 600, cursor: 'pointer' }}
             onClick={() => {
               setMode(mode === 'signin' ? 'signup' : 'signin');
               setError(null);
             }}
           >
             {mode === 'signin' ? 'Create one' : 'Sign in'}
-          </button>
+          </span>
         </p>
+
+        {/* DEV-ONLY demo access — remove before production */}
+        <button
+          type="button"
+          onClick={handleDemo}
+          disabled={busy}
+          className="meta"
+          style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          ↳ continue to demo account (dev only)
+        </button>
       </div>
     </main>
   );

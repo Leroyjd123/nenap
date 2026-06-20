@@ -8,6 +8,7 @@ interface ConfirmModalProps {
   title: string;
   body: string;
   confirmLabel?: string;
+  cancelLabel?: string;
   destructive?: boolean;
   busy?: boolean;
   onConfirm: () => void;
@@ -20,6 +21,7 @@ export function ConfirmModal({
   title,
   body,
   confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
   destructive,
   busy,
   onConfirm,
@@ -34,19 +36,18 @@ export function ConfirmModal({
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            Cancel
+            {cancelLabel}
           </Button>
           <Button
             onClick={onConfirm}
             disabled={busy}
-            variant={destructive ? 'rec' : 'primary'}
+            // Solid clay for destructive actions, matching the Hi-Fi delete modal.
+            style={destructive ? { background: 'var(--rec)', color: '#fff', boxShadow: 'none', borderColor: 'var(--rec)' } : undefined}
           >
             {busy ? 'Working…' : confirmLabel}
           </Button>
         </>
       }
-    >
-      <span className="sr-only">{body}</span>
-    </Modal>
+    />
   );
 }

@@ -3,34 +3,22 @@
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { Folder } from '@nenap/types';
-import { Brand } from '@/components/brand';
 import { CreateFolderModal } from '@/components/create-folder-modal';
+import { Icon } from '@/components/ui/icon';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 
 interface AppShellProps {
   children: ReactNode;
+  top?: ReactNode; // desktop d-top bar content (search + actions)
   email?: string;
   folders: Folder[];
   activeFolderId?: string;
   onSelectFolder: (id?: string) => void;
-  headerActions?: ReactNode;
-  title?: string;
 }
 
-/**
- * Responsive app shell from the Hi-Fi design: 220px sidebar + main column on desktop;
- * the sidebar collapses on mobile, with a floating "New note" action.
- */
-export function AppShell({
-  children,
-  email,
-  folders,
-  activeFolderId,
-  onSelectFolder,
-  headerActions,
-  title = 'Today',
-}: AppShellProps) {
+/** Dashboard shell from the Hi-Fi design: 220px sidebar + main on desktop; m-top + tabbar + FAB on mobile. */
+export function AppShell({ children, top, email, folders, activeFolderId, onSelectFolder }: AppShellProps) {
   const router = useRouter();
   const [folderModal, setFolderModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -40,142 +28,87 @@ export function AppShell({
     router.replace('/login');
   }
 
+  const initial = (email?.[0] ?? 'N').toUpperCase();
+
   return (
-    <div className="md:grid md:grid-cols-[220px_1fr] min-h-screen">
-      <aside className="hidden md:flex bg-surface-2 border-r border-line px-3.5 py-4.5 flex-col gap-1">
-        <Brand className="text-[23px] px-2 pt-1 pb-4" />
-
-        <NavItem label="All notes" active={!activeFolderId} onClick={() => onSelectFolder(undefined)} />
-
-        <div className="flex items-center justify-between px-2 pt-3 pb-1.5">
-          <span className="eyebrow">Folders</span>
-          <button
-            type="button"
-            onClick={() => setFolderModal(true)}
-            className="text-accent hover:text-accent-deep text-base leading-none"
-            aria-label="New folder"
-            title="New folder"
-          >
-            +
-          </button>
-        </div>
-        {folders.map((f) => (
-          <NavItem
-            key={f.id}
-            label={f.name}
-            count={f.noteCount}
-            active={activeFolderId === f.id}
-            onClick={() => onSelectFolder(f.id)}
-          />
-        ))}
-        {folders.length === 0 && (
-          <button
-            type="button"
-            onClick={() => setFolderModal(true)}
-            className="text-left px-2.5 py-2 text-sm text-ink-3 hover:text-ink-2"
-          >
-            + New folder
-          </button>
-        )}
-
-        {/* User + logout */}
-        <div className="mt-auto relative">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm hover:bg-[color-mix(in_oklab,var(--ink)_5%,transparent)]"
-          >
-            <Avatar email={email} />
-            <span className="text-sm text-ink-2 truncate">{email ?? 'Not signed in'}</span>
-          </button>
-          {menuOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-1 bg-surface border border-line-2 rounded-sm shadow-2 p-1">
-              <button
-                type="button"
-                onClick={logout}
-                className="w-full text-left px-3 py-2 text-sm text-ink-2 hover:bg-[color-mix(in_oklab,var(--ink)_5%,transparent)] hover:text-ink rounded-[calc(var(--r-sm)-2px)]"
-              >
-                Log out
-              </button>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      <div className="flex flex-col min-w-0">
-        <header className="flex items-center gap-3.5 px-[var(--pad)] py-3.5 border-b border-line">
-          <Brand className="text-[20px] md:hidden" />
-          <h1 className="font-display text-[20px] font-medium text-ink m-0 hidden md:block">{title}</h1>
-          <div className="ml-auto flex items-center gap-2">
-            {headerActions}
-            <button
-              type="button"
-              onClick={logout}
-              className="md:hidden text-ink-2 text-sm hover:text-ink"
-              title="Log out"
-            >
-              Log out
-            </button>
+    <>
+      {/* ===== Desktop ===== */}
+      <div className="d-shell hidden md:grid">
+        <aside className="d-side">
+          <div className="brand" style={{ fontSize: 23, padding: '4px 8px 16px', cursor: 'pointer' }} onClick={() => onSelectFolder(undefined)}>
+            Nenap<span className="dot">.</span>
           </div>
-        </header>
-        <main className="flex-1 p-[var(--pad)] pb-24 md:pb-[var(--pad)]">{children}</main>
+          <div className="side-lab">Folders</div>
+          <button className={cn('nav-item', !activeFolderId && 'on')} onClick={() => onSelectFolder(undefined)}>
+            <Icon name="home" size={17} />
+            <span className="grow" style={{ flex: 1 }}>All notes</span>
+          </button>
+          {folders.map((f) => (
+            <button
+              key={f.id}
+              className={cn('nav-item', activeFolderId === f.id && 'on')}
+              onClick={() => onSelectFolder(f.id)}
+            >
+              <Icon name="folder" size={17} />
+              <span className="grow" style={{ flex: 1 }}>{f.name}</span>
+              {f.noteCount !== undefined && <span className="ct">{f.noteCount}</span>}
+            </button>
+          ))}
+          <button className="nav-item nav-add" onClick={() => setFolderModal(true)}>
+            <Icon name="plus" size={16} /> New folder
+          </button>
+
+          <div className="grow" style={{ flex: 1 }} />
+          <hr className="hr" style={{ margin: '8px 4px' }} />
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="nav-item"
+              style={{ gap: 9 }}
+            >
+              <span className="av">{initial}</span>
+              <span className="grow truncate" style={{ flex: 1, fontSize: 13, color: 'var(--ink-2)' }}>
+                {email ?? 'Account'}
+              </span>
+              <Icon name="chevD" size={14} />
+            </button>
+            {menuOpen && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-surface border border-line-2 rounded-sm shadow-2 p-1">
+                <button className="nav-item" onClick={logout}>Log out</button>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        <div className="d-main">
+          {top && <div className="d-top">{top}</div>}
+          <div className="d-content scrollable" style={{ padding: '20px var(--pad) 40px' }}>
+            {children}
+          </div>
+        </div>
       </div>
 
-      {/* Mobile floating action — capture-first */}
-      <button
-        type="button"
-        onClick={() => router.push('/notes/new')}
-        className="md:hidden fixed right-5 bottom-6 z-10 w-14 h-14 rounded-full bg-accent text-white
-                   shadow-2 grid place-items-center text-2xl leading-none"
-        aria-label="New note"
-      >
-        +
-      </button>
+      {/* ===== Mobile ===== */}
+      <div className="md:hidden flex flex-col min-h-screen">
+        <div className="m-top">
+          <div className="brand">Nenap<span className="dot">.</span></div>
+          <button onClick={logout} className="btn btn-ghost btn-sm">Log out</button>
+        </div>
+        <div className="grow scrollable" style={{ flex: 1, padding: '0 var(--pad) 90px' }}>
+          {children}
+        </div>
+        <div className="m-fab">
+          <button className="btn btn-primary" style={{ borderRadius: 99, padding: '13px 20px', boxShadow: 'var(--shadow-2)' }} onClick={() => router.push('/notes/new')}>
+            <Icon name="plus" size={18} /> New note
+          </button>
+        </div>
+        <nav className="m-tabbar">
+          <div className="m-tab on"><Icon name="home" size={21} /> Home</div>
+          <div className="m-tab" onClick={() => setFolderModal(true)}><Icon name="folder" size={21} /> Folders</div>
+        </nav>
+      </div>
 
       <CreateFolderModal open={folderModal} onClose={() => setFolderModal(false)} />
-    </div>
-  );
-}
-
-function NavItem({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string;
-  count?: number;
-  active?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex items-center gap-2.5 px-2.5 py-2 rounded-sm text-sm transition-colors text-left',
-        active
-          ? 'bg-accent-tint text-accent-deep font-semibold'
-          : 'text-ink-2 hover:bg-[color-mix(in_oklab,var(--ink)_5%,transparent)] hover:text-ink',
-      )}
-    >
-      <span className="truncate">{label}</span>
-      {count !== undefined && (
-        <span className={cn('ml-auto font-mono text-[11px]', active ? 'text-accent-deep/70' : 'text-ink-3')}>
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function Avatar({ email }: { email?: string }) {
-  return (
-    <span
-      className="w-8 h-8 rounded-full grid place-items-center text-white text-[13px] font-semibold flex-none"
-      style={{ background: 'linear-gradient(135deg, var(--accent-soft), var(--accent))' }}
-    >
-      {(email?.[0] ?? 'N').toUpperCase()}
-    </span>
+    </>
   );
 }

@@ -1,46 +1,36 @@
 'use client';
 
 import Link from 'next/link';
-import type { NoteSummary } from '@nenap/types';
-import { Tag } from '@/components/ui/tag';
+import type { Folder, NoteSummary } from '@nenap/types';
+import { Icon } from '@/components/ui/icon';
 
 const dateFmt = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' });
 
 /** Dashboard note card (.note-card): serif title, 2-line excerpt, mono footer, clay rec dot. */
-export function NoteCard({ note }: { note: NoteSummary }) {
+export function NoteCard({ note, folders }: { note: NoteSummary; folders?: Folder[] }) {
   const when = dateFmt.format(new Date(note.updatedAt));
+  const folderName = folders?.find((f) => f.id === note.folderId)?.name;
 
   return (
-    <Link
-      href={`/notes/${note.id}`}
-      className="group relative block bg-surface border border-line rounded-[var(--r)]
-                 p-[var(--pad)] shadow-1 overflow-hidden transition-all duration-200
-                 hover:border-accent-line hover:shadow-2 hover:-translate-y-0.5"
-    >
+    <Link href={`/notes/${note.id}`} className="note-card">
       {note.hasRecording && (
-        <span
-          className="absolute top-4 right-4 w-2 h-2 rounded-full"
-          style={{ background: 'var(--rec)', boxShadow: '0 0 0 3px var(--rec-tint)' }}
-          aria-label="Has recording"
-        />
+        <span className="rec-dot" style={{ position: 'absolute', top: 'var(--pad)', right: 'var(--pad)' }} />
       )}
-
-      <h3 className="font-display text-[18px] font-semibold leading-tight tracking-[-0.01em] m-0 pr-6">
+      <h3 className="nc-title" style={{ paddingRight: note.hasRecording ? 16 : 0 }}>
         {note.title || 'Untitled'}
       </h3>
-
-      {note.excerpt && (
-        <p className="text-ink-2 text-[13.5px] leading-relaxed mt-2 line-clamp-2">{note.excerpt}</p>
-      )}
-
-      <div className="flex items-center gap-2 mt-3.5 flex-wrap">
-        <span className="font-mono text-[11px] text-ink-3">{when}</span>
-        {note.status === 'processing' && (
-          <span className="font-mono text-[10.5px] text-accent-deep">· improving…</span>
+      {note.excerpt && <p className="nc-ex">{note.excerpt}</p>}
+      <div className="nc-foot">
+        <span className="meta">{when}</span>
+        {note.status === 'processing' ? (
+          <span className="tag" style={{ color: 'var(--rec)', background: 'var(--rec-tint)' }}>
+            enhancing…
+          </span>
+        ) : (
+          note.tags.slice(0, 2).map((t) => <span key={t.id} className="tag">{t.name}</span>)
         )}
-        {note.tags.slice(0, 3).map((t) => (
-          <Tag key={t.id} label={t.name} />
-        ))}
+        <span className="grow" style={{ flex: 1 }} />
+        {folderName && <span className="meta">{folderName}</span>}
       </div>
     </Link>
   );
