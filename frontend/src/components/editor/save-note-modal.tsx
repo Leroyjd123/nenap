@@ -15,7 +15,11 @@ interface SaveNoteModalProps {
   initialFolderId?: string | null;
   initialTags?: string[];
   saving?: boolean;
-  onConfirm: (data: { folderId: string | null; tagNames: string[] }) => void;
+  /** Record-first has no note yet — ask for a title up front. */
+  askTitle?: boolean;
+  title?: string;
+  subtitle?: string;
+  onConfirm: (data: { title?: string; folderId: string | null; tagNames: string[] }) => void;
 }
 
 /** Organise-on-save: one folder per note + cross-cutting tags (Hi-Fi save-note modal). */
@@ -26,12 +30,16 @@ export function SaveNoteModal({
   initialFolderId = null,
   initialTags = [],
   saving,
+  askTitle,
+  title = 'Save note',
+  subtitle = 'Tuck it into a folder and add tags — or just save.',
   onConfirm,
 }: SaveNoteModalProps) {
   const existingTags = useTags();
   const [folderId, setFolderId] = useState<string | null>(initialFolderId);
   const [tags, setTags] = useState<string[]>(initialTags);
   const [tagInput, setTagInput] = useState('');
+  const [noteTitle, setNoteTitle] = useState('');
 
   const toggle = (name: string) =>
     setTags((x) => (x.includes(name) ? x.filter((y) => y !== name) : [...x, name]));
@@ -49,17 +57,32 @@ export function SaveNoteModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Save note"
-      subtitle="Tuck it into a folder and add tags — or just save."
+      title={title}
+      subtitle={subtitle}
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={() => onConfirm({ folderId, tagNames: tags })} disabled={saving}>
+          <Button
+            onClick={() => onConfirm({ title: askTitle ? noteTitle.trim() : undefined, folderId, tagNames: tags })}
+            disabled={saving || (askTitle && !noteTitle.trim())}
+          >
             {saving ? 'Saving…' : 'Save'}
           </Button>
         </>
       }
     >
+      {askTitle && (
+        <>
+          <label className="field-lab">Title</label>
+          <input
+            autoFocus
+            value={noteTitle}
+            onChange={(e) => setNoteTitle(e.target.value)}
+            placeholder="Give it a title"
+            className="input"
+          />
+        </>
+      )}
       <label className="field-lab">Folder</label>
       <div style={{ maxHeight: 180, overflowY: 'auto' }}>
         <div className={cn('opt-row', folderId === null && 'on')} onClick={() => setFolderId(null)}>

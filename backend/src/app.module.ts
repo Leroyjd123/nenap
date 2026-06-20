@@ -8,6 +8,8 @@ import { UsersModule } from './users/users.module';
 import { NotesModule } from './notes/notes.module';
 import { FoldersModule } from './folders/folders.module';
 import { TagsModule } from './tags/tags.module';
+import { StorageModule } from './storage/storage.module';
+import { RecordingsModule } from './recordings/recordings.module';
 
 @Module({
   imports: [
@@ -18,10 +20,12 @@ import { TagsModule } from './tags/tags.module';
     PrismaModule,
     UsersModule,
     AuthModule,
+    StorageModule,
     HealthModule,
     NotesModule,
     FoldersModule,
     TagsModule,
+    RecordingsModule,
   ],
 })
 export class AppModule {}

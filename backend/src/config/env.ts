@@ -11,7 +11,10 @@ export const envSchema = z.object({
     .transform((s) => s.split(',').map((o) => o.trim()).filter(Boolean)),
   SUPABASE_URL: z.string().default('https://placeholder.supabase.co'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().default('placeholder-service-role-key'),
+  // New-format secret key (sb_secret_…) for Storage signing; falls back to service-role.
+  SUPABASE_SECRET_KEY: z.string().default(''),
   SUPABASE_JWT_SECRET: z.string().min(1).default('placeholder-jwt-secret-change-me'),
+  RECORDINGS_BUCKET: z.string().default('recordings'),
   GEMINI_API_KEY: z.string().default('placeholder-gemini-key'),
 });
 

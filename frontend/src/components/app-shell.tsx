@@ -98,6 +98,9 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
           {children}
         </div>
         <div className="m-fab">
+          <button className="btn btn-rec btn-sm" style={{ boxShadow: 'var(--shadow-2)' }} onClick={() => router.push('/record')}>
+            <Icon name="mic" size={16} /> Record
+          </button>
           <button className="btn btn-primary" style={{ borderRadius: 99, padding: '13px 20px', boxShadow: 'var(--shadow-2)' }} onClick={() => router.push('/notes/new')}>
             <Icon name="plus" size={18} /> New note
           </button>

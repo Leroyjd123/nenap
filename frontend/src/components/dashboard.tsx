@@ -36,7 +36,7 @@ export function Dashboard({ email }: { email?: string }) {
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search notes, tags…" />
       </label>
       <span className="grow" style={{ flex: 1 }} />
-      <Button variant="rec" disabled title="Recording arrives in Phase 3">
+      <Button variant="rec" onClick={() => router.push('/record')}>
         <Icon name="mic" size={17} /> Record
       </Button>
       <Button onClick={() => router.push('/notes/new')}>

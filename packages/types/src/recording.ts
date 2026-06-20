@@ -13,17 +13,25 @@ export const Recording = z.object({
 });
 export type Recording = z.infer<typeof Recording>;
 
-/** Backend issues a signed URL; the browser uploads the file directly to storage. */
-export const CreateUploadUrlInput = z.object({
-  noteId: Uuid,
+/** Step 1: ask the backend for a signed upload slot (noteId comes from the route). */
+export const SignRecordingInput = z.object({
   mimeType: z.string().default('audio/webm'),
-  durationSec: z.number().int().min(0).max(60 * 60).optional(),
 });
-export type CreateUploadUrlInput = z.infer<typeof CreateUploadUrlInput>;
+export type SignRecordingInput = z.infer<typeof SignRecordingInput>;
 
-export const UploadUrlResponse = z.object({
-  uploadUrl: z.string().url(),
-  storagePath: z.string(),
+/** Backend returns a one-time signed upload token + the storage path. */
+export const SignedUploadResponse = z.object({
   recordingId: Uuid,
+  path: z.string(),
+  token: z.string(),
+  signedUrl: z.string().url(),
 });
-export type UploadUrlResponse = z.infer<typeof UploadUrlResponse>;
+export type SignedUploadResponse = z.infer<typeof SignedUploadResponse>;
+
+/** Step 2: after the browser uploads, confirm metadata and queue processing. */
+export const CompleteRecordingInput = z.object({
+  recordingId: Uuid,
+  durationSec: z.number().int().min(0).max(60 * 60).optional(),
+  sizeBytes: z.number().int().min(0).optional(),
+});
+export type CompleteRecordingInput = z.infer<typeof CompleteRecordingInput>;
