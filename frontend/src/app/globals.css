@@ -119,3 +119,29 @@ body {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-tint);
 }
+
+/* note prose (.prose) — editorial reading surface */
+.prose-nenap h1,
+.prose-nenap h2,
+.prose-nenap h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 22px 0 8px;
+}
+.prose-nenap h1:first-child,
+.prose-nenap h2:first-child,
+.prose-nenap h3:first-child { margin-top: 0; }
+.prose-nenap p { margin: 0 0 10px; color: #3c3a32; }
+.prose-nenap ul,
+.prose-nenap ol { margin: 0 0 10px; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.prose-nenap li { color: #3c3a32; }
+.prose-nenap strong { font-weight: 600; }
+.prose-nenap.is-editor-empty:first-child::before,
+.prose-nenap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

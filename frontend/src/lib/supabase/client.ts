@@ -12,7 +12,7 @@ export function getSupabaseBrowserClient() {
   if (cached) return cached;
   cached = createBrowserClient(
     env.supabaseUrl || 'https://placeholder.supabase.co',
-    env.supabaseAnonKey || 'placeholder-anon-key',
+    env.supabaseKey || 'placeholder-key',
   );
   return cached;
 }

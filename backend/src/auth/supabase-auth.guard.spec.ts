@@ -14,7 +14,7 @@ function makeContext(headers: Record<string, string>, isPublic = false) {
     getAllAndOverride: () => isPublic,
   } as unknown as Reflector;
   const config = {
-    get: () => SECRET,
+    get: (key: string, def?: string) => (key === 'SUPABASE_JWT_SECRET' ? SECRET : (def ?? '')),
   } as unknown as ConfigService;
   const ctx = {
     switchToHttp: () => ({ getRequest: () => request }),

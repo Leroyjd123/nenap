@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -10,7 +10,8 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // Input validation is handled per-route by ZodValidationPipe (shared @nenap/types
+  // schemas), so we don't register Nest's class-validator-based ValidationPipe.
 
   app.enableCors({
     origin: config.get<string[]>('CORS_ORIGINS') ?? ['http://localhost:3000'],

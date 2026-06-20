@@ -67,10 +67,30 @@ Built against **placeholder env**; all green locally: typecheck ✓ · 7 unit te
 - Monorepo (pnpm + Turborepo), `packages/types` (Zod + tests), NestJS backend (env validation, full Prisma schema, Supabase JWT guard, `/health` + `/me`, Swagger), Next.js 15 frontend (Hi-Fi tokens + fonts, themed Button/Input, Brand, Auth screen email/pw + dormant Google, dashboard shell + ConnectionStatus handshake), docker-compose (Postgres), GitHub Actions CI.
 - Decisions made while building: jose for JWT verify; global APP_GUARD + `@Public()`; `User.id` = Supabase auth uid; pnpm `onlyBuiltDependencies` allowlist; `.gitattributes` LF normalization; frontend test `--passWithNoTests`.
 
+## Phase 2 — DONE (scaffolded & verified locally) ✅
+Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 tests ✓ · build ✓.
+- Backend: Notes/Folders/Tags modules (service + controller), ownership enforced in service layer, `ZodValidationPipe` (shared contract), `UsersService.ensureUser` lazy profile sync, `toExcerpt` strips HTML+markdown.
+- Frontend: TanStack Query hooks (`lib/queries.ts`), Hi-Fi primitives (Button/Input/Chip/Tag/Segmented/Modal/Toast/Skeleton/EmptyState/NoteCard), responsive AppShell (live folders), Dashboard (filters + debounced search), Tiptap NoteEditor + SaveNoteModal, routes `/notes/new` + `/notes/[id]`.
+- Repo cleanup done: removed duplicate `logo.svg`, moved master to `design/assets/logo-master.png`, added `.gitattributes` + `.markdownlint.json`. Phase 1 committed on `master` (1470900).
+- **Remaining:** live-DB verification once Supabase connected. Note View tabs + recording = Phases 3–4.
+
+## Supabase — partially wired (2026-06-15)
+- Project: `iohmtxsvrymrazyyakdo`. **URL + publishable key** provided and wired:
+  `frontend/.env.local` (auth-only browser client) and `backend/.env` (`SUPABASE_URL`).
+- Backend guard verifies tokens via the **JWKS endpoint** (asymmetric) with HS256 fallback — no JWT secret needed for `/me`.
+- New-key format → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (env.ts also accepts legacy anon).
+
+## Live DB — migration APPLIED & data model VERIFIED (2026-06-15, via Supabase MCP)
+- `init_nenap_schema` applied to project `iohmtxsvrymrazyyakdo` (region ap-northeast-1). All 9 tables present, 0 rows.
+- Data-model round-trip exercised via MCP execute_sql (now cleaned up, DB pristine): create user→folder→tag→note + dashboard join ✓; folder delete → note.folderId NULL (SetNull) ✓; note/user delete cascades ✓.
+- Security advisors: 9× `rls_enabled_no_policy` (INFO) — **intentional/safe**: RLS on + no policy locks the public PostgREST API; our backend uses the `postgres` role (bypasses RLS); frontend never queries DB directly. Two WARNs about pre-existing `public.rls_auto_enable()` (project artifact, not ours) — optionally `REVOKE EXECUTE ... FROM anon, authenticated`.
+- **⚠️ Gap:** the NestJS backend's runtime Prisma connection still has a placeholder password in `backend/.env` `DATABASE_URL`/`DIRECT_URL`. The MCP applied the schema, but the *app's* backend can't connect to the DB until the real DB password is filled in. Full app click-through (frontend→backend→DB) is pending that.
+
+## Still needed from founder (later)
+- **Supabase secret key** (`sb_secret_…`) — for Storage signing in Phase 3.
+- (Optional) DB password / `DATABASE_URL` only if we ever run Prisma migrate directly instead of via the MCP.
+
 ## Pending tasks / next up
-- **⚠️ DEFERRED — Supabase setup (founder):** create project, add real `DATABASE_URL`, `SUPABASE_URL`, anon key, service-role key, JWT secret to `.env` files. MCP configured in `.mcp.json` (project_ref `iohmtxsvrymrazyyakdo`) but **not yet authenticated** — `claude /mcp` in a real terminal when ready.
-- **Run first migration** once a DB exists: `make db-migrate` (schema is written, not yet applied).
-- **Verify** a real email/password login end-to-end after Supabase is connected.
 - **Then Phase 2** (Notes/Folders/Tags/Dashboard) — awaiting founder go.
 - Docker is NOT installed on the dev machine — needed for `make db-up`, or use Supabase directly.
 
