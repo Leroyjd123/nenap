@@ -27,6 +27,24 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [resendNote, setResendNote] = useState<string | null>(null);
+
+  async function handleResend() {
+    if (!sentTo) return;
+    setResendNote(null);
+    setBusy(true);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { error: authError } = await supabase.auth.resend({
+        type: 'signup',
+        email: sentTo,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      setResendNote(authError ? authError.message : 'Sent again — check your inbox.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleDemo() {
     setError(null);
@@ -106,16 +124,22 @@ export default function LoginPage() {
             We sent a confirmation link to <strong style={{ color: 'var(--ink)' }}>{sentTo}</strong>.
             Click it to finish creating your account.
           </p>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ marginTop: 20 }}
-            onClick={() => {
-              setSentTo(null);
-              setMode('signin');
-            }}
-          >
-            Back to sign in
-          </button>
+          <div className="row center" style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+            <button className="btn btn-soft btn-sm" onClick={handleResend} disabled={busy}>
+              {busy ? 'Sending…' : 'Resend email'}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                setSentTo(null);
+                setResendNote(null);
+                setMode('signin');
+              }}
+            >
+              Back to sign in
+            </button>
+          </div>
+          {resendNote && <p className="meta" style={{ marginTop: 12 }}>{resendNote}</p>}
         </div>
       </main>
     );

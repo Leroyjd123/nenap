@@ -34,6 +34,18 @@ export function NoteEditor({ note }: { note?: Note }) {
 
   const saving = createNote.isPending || updateNote.isPending;
 
+  // A note needs at least a title or some body text before it can be saved.
+  const plainBody = content.replace(/<[^>]*>/g, '').trim();
+  const isEmpty = !title.trim() && !plainBody;
+
+  function openSave() {
+    if (isEmpty) {
+      toast.show('Add a title or a few words first');
+      return;
+    }
+    setModalOpen(true);
+  }
+
   async function handleConfirm({ folderId, tagNames }: { folderId: string | null; tagNames: string[] }) {
     try {
       if (note) {
@@ -69,7 +81,7 @@ export function NoteEditor({ note }: { note?: Note }) {
         </button>
         <Brand className="text-[18px] hidden md:block" />
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" onClick={() => setModalOpen(true)} disabled={saving}>
+          <Button size="sm" onClick={openSave} disabled={saving || isEmpty} title={isEmpty ? 'Write something first' : undefined}>
             {note ? 'Save' : 'Save note'}
           </Button>
         </div>
