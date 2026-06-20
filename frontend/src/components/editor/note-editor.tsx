@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { TiptapEditor } from './tiptap-editor';
 import { SaveNoteModal } from './save-note-modal';
-import { useCreateNote, useDeleteNote, useFolders, useUpdateNote } from '@/lib/queries';
+import { useCreateNote, useFolders, useUpdateNote } from '@/lib/queries';
 
 /**
  * Note editor for both new and existing notes. Capture-first: open straight into
- * writing; choose folder/tags only at save time.
+ * writing; choose folder/tags only at save time. Delete lives in the read-only Note View.
  */
 export function NoteEditor({ note }: { note?: Note }) {
   const router = useRouter();
@@ -20,7 +20,6 @@ export function NoteEditor({ note }: { note?: Note }) {
   const folders = useFolders();
   const createNote = useCreateNote();
   const updateNote = useUpdateNote(note?.id ?? '');
-  const deleteNote = useDeleteNote();
 
   const [title, setTitle] = useState(note?.title ?? '');
   const [content, setContent] = useState(note?.originalContent ?? '');
@@ -40,6 +39,8 @@ export function NoteEditor({ note }: { note?: Note }) {
       if (note) {
         await updateNote.mutateAsync({ title, originalContent: content, folderId, tagNames });
         toast.show('Note saved');
+        setModalOpen(false);
+        router.push(`/notes/${note.id}`); // back to the read-only view
       } else {
         const created = await createNote.mutateAsync({
           title,
@@ -48,35 +49,26 @@ export function NoteEditor({ note }: { note?: Note }) {
           tagNames,
         });
         toast.show('Note created');
+        setModalOpen(false);
         router.replace(`/notes/${created.id}`);
       }
-      setModalOpen(false);
     } catch {
       toast.show('Could not save — try again');
     }
   }
 
-  async function handleDelete() {
-    if (!note) return;
-    if (!window.confirm('Delete this note? This cannot be undone.')) return;
-    await deleteNote.mutateAsync(note.id);
-    toast.show('Note deleted');
-    router.push('/');
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <header className="flex items-center gap-3 px-[var(--pad)] py-3.5 border-b border-line">
-        <button onClick={() => router.push('/')} className="text-ink-2 hover:text-ink text-sm" type="button">
-          ← Notes
+        <button
+          onClick={() => router.push(note ? `/notes/${note.id}` : '/')}
+          className="text-ink-2 hover:text-ink text-sm"
+          type="button"
+        >
+          ← {note ? 'Cancel' : 'Notes'}
         </button>
-        <Brand className="text-[18px] mx-auto md:mx-0" />
+        <Brand className="text-[18px] hidden md:block" />
         <div className="ml-auto flex items-center gap-2">
-          {note && (
-            <Button variant="ghost" size="sm" onClick={handleDelete}>
-              Delete
-            </Button>
-          )}
           <Button size="sm" onClick={() => setModalOpen(true)} disabled={saving}>
             {note ? 'Save' : 'Save note'}
           </Button>

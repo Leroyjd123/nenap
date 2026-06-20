@@ -1,12 +1,12 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { NoteView } from '@/components/note-view';
+import { NoteEditor } from '@/components/editor/note-editor';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useNote } from '@/lib/queries';
 import { useSession } from '@/hooks/use-session';
 
-export default function NotePage() {
+export default function EditNotePage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const { session, loading } = useSession();
@@ -26,5 +26,5 @@ export default function NotePage() {
       </main>
     );
   }
-  return <NoteView note={note.data} />;
+  return <NoteEditor note={note.data} />;
 }

@@ -7,6 +7,7 @@ import {
   type UseQueryOptions,
 } from '@tanstack/react-query';
 import type {
+  CreateFolderInput,
   CreateNoteInput,
   Folder,
   ListNotesQuery,
@@ -59,6 +60,15 @@ export function useFolders() {
 
 export function useTags() {
   return useQuery({ queryKey: qk.tags(), queryFn: () => apiFetch<Tag[]>('/tags') });
+}
+
+export function useCreateFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateFolderInput) =>
+      apiFetch<Folder>('/folders', { method: 'POST', body: JSON.stringify(input) }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.folders() }),
+  });
 }
 
 export function useCreateNote() {

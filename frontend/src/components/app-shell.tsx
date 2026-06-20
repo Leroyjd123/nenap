@@ -1,9 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Folder } from '@nenap/types';
 import { Brand } from '@/components/brand';
+import { CreateFolderModal } from '@/components/create-folder-modal';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 
 interface AppShellProps {
@@ -30,6 +32,13 @@ export function AppShell({
   title = 'Today',
 }: AppShellProps) {
   const router = useRouter();
+  const [folderModal, setFolderModal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  async function logout() {
+    await getSupabaseBrowserClient().auth.signOut();
+    router.replace('/login');
+  }
 
   return (
     <div className="md:grid md:grid-cols-[220px_1fr] min-h-screen">
@@ -38,7 +47,18 @@ export function AppShell({
 
         <NavItem label="All notes" active={!activeFolderId} onClick={() => onSelectFolder(undefined)} />
 
-        <p className="eyebrow px-2 pt-3 pb-1.5">Folders</p>
+        <div className="flex items-center justify-between px-2 pt-3 pb-1.5">
+          <span className="eyebrow">Folders</span>
+          <button
+            type="button"
+            onClick={() => setFolderModal(true)}
+            className="text-accent hover:text-accent-deep text-base leading-none"
+            aria-label="New folder"
+            title="New folder"
+          >
+            +
+          </button>
+        </div>
         {folders.map((f) => (
           <NavItem
             key={f.id}
@@ -48,10 +68,37 @@ export function AppShell({
             onClick={() => onSelectFolder(f.id)}
           />
         ))}
+        {folders.length === 0 && (
+          <button
+            type="button"
+            onClick={() => setFolderModal(true)}
+            className="text-left px-2.5 py-2 text-sm text-ink-3 hover:text-ink-2"
+          >
+            + New folder
+          </button>
+        )}
 
-        <div className="mt-auto flex items-center gap-2.5 px-2.5 py-2">
-          <Avatar email={email} />
-          <span className="text-sm text-ink-2 truncate">{email ?? 'Not signed in'}</span>
+        {/* User + logout */}
+        <div className="mt-auto relative">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-sm hover:bg-[color-mix(in_oklab,var(--ink)_5%,transparent)]"
+          >
+            <Avatar email={email} />
+            <span className="text-sm text-ink-2 truncate">{email ?? 'Not signed in'}</span>
+          </button>
+          {menuOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-1 bg-surface border border-line-2 rounded-sm shadow-2 p-1">
+              <button
+                type="button"
+                onClick={logout}
+                className="w-full text-left px-3 py-2 text-sm text-ink-2 hover:bg-[color-mix(in_oklab,var(--ink)_5%,transparent)] hover:text-ink rounded-[calc(var(--r-sm)-2px)]"
+              >
+                Log out
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -59,7 +106,17 @@ export function AppShell({
         <header className="flex items-center gap-3.5 px-[var(--pad)] py-3.5 border-b border-line">
           <Brand className="text-[20px] md:hidden" />
           <h1 className="font-display text-[20px] font-medium text-ink m-0 hidden md:block">{title}</h1>
-          <div className="ml-auto flex items-center gap-2">{headerActions}</div>
+          <div className="ml-auto flex items-center gap-2">
+            {headerActions}
+            <button
+              type="button"
+              onClick={logout}
+              className="md:hidden text-ink-2 text-sm hover:text-ink"
+              title="Log out"
+            >
+              Log out
+            </button>
+          </div>
         </header>
         <main className="flex-1 p-[var(--pad)] pb-24 md:pb-[var(--pad)]">{children}</main>
       </div>
@@ -74,6 +131,8 @@ export function AppShell({
       >
         +
       </button>
+
+      <CreateFolderModal open={folderModal} onClose={() => setFolderModal(false)} />
     </div>
   );
 }
