@@ -22,8 +22,23 @@ const splineMono = Spline_Sans_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Nenap — Focus on the moment',
   description: 'A calm knowledge-capture app. Focus on the moment. Nenap remembers the rest.',
+  applicationName: 'Nenap',
+  openGraph: {
+    title: 'Nenap — Focus on the moment',
+    description: 'A calm knowledge-capture app. Focus on the moment. Nenap remembers the rest.',
+    url: '/',
+    siteName: 'Nenap',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Nenap — Focus on the moment',
+    description: 'A calm knowledge-capture app. Focus on the moment. Nenap remembers the rest.',
+  },
 };
 
 // Set the theme before first paint so there's no flash of the wrong mode.
