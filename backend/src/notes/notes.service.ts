@@ -15,8 +15,8 @@ import { toNote, toNoteSummary } from '../common/mappers';
 
 const DETAIL_INCLUDE = {
   tags: true,
-  recording: true,
-  transcript: true,
+  recordings: { orderBy: { createdAt: 'asc' } },
+  transcripts: { orderBy: { createdAt: 'asc' } },
   enhancedVersions: { orderBy: { version: 'desc' } },
   attachments: { orderBy: { createdAt: 'asc' } },
 } satisfies Prisma.NoteInclude;
@@ -33,8 +33,8 @@ export class NotesService {
     const where: Prisma.NoteWhereInput = { userId: user.id };
 
     if (query.folderId) where.folderId = query.folderId;
-    if (query.hasRecording === true) where.recording = { isNot: null };
-    if (query.hasRecording === false) where.recording = { is: null };
+    if (query.hasRecording === true) where.recordings = { some: {} };
+    if (query.hasRecording === false) where.recordings = { none: {} };
     if (query.tag) where.tags = { some: { name: query.tag } };
     if (query.from || query.to) {
       where.createdAt = {
@@ -50,14 +50,14 @@ export class NotesService {
         { title: { contains: q, mode: 'insensitive' } },
         { originalContent: { contains: q, mode: 'insensitive' } },
         { tags: { some: { name: { contains: q, mode: 'insensitive' } } } },
-        { transcript: { content: { contains: q, mode: 'insensitive' } } },
+        { transcripts: { some: { content: { contains: q, mode: 'insensitive' } } } },
         { enhancedVersions: { some: { content: { contains: q, mode: 'insensitive' } } } },
       ];
     }
 
     const notes = await this.prisma.note.findMany({
       where,
-      include: { tags: true, recording: true },
+      include: { tags: true, _count: { select: { recordings: true } } },
       orderBy: { createdAt: 'desc' },
       take: query.limit,
       skip: query.offset,
@@ -69,7 +69,12 @@ export class NotesService {
     const note = await this.prisma.note.findUnique({ where: { id }, include: DETAIL_INCLUDE });
     if (!note) throw new NotFoundException('Note not found');
     if (note.userId !== user.id) throw new ForbiddenException();
-    return toNote(note);
+    const mapped = toNote(note);
+    // Attach short-lived signed playback URLs for each recording.
+    mapped.recordings = await Promise.all(
+      mapped.recordings.map(async (r) => ({ ...r, url: await this.storage.createSignedDownloadUrl(r.storagePath) })),
+    );
+    return mapped;
   }
 
   async create(user: AuthUser, input: CreateNoteInput): Promise<Note> {
@@ -114,11 +119,11 @@ export class NotesService {
     await this.assertNoteOwned(user, id);
     // Storage isn't cascade-linked to the DB, so remove the files first — before the
     // rows (and their storagePaths) are gone. remove() is best-effort.
-    const recording = await this.prisma.recording.findUnique({
+    const recordings = await this.prisma.recording.findMany({
       where: { noteId: id },
       select: { storagePath: true },
     });
-    if (recording) await this.storage.remove(recording.storagePath);
+    await Promise.all(recordings.map((r) => this.storage.remove(r.storagePath)));
 
     const attachments = await this.prisma.attachment.findMany({
       where: { noteId: id },

@@ -126,8 +126,8 @@ model Note {
   user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   folder           Folder?              @relation(fields: [folderId], references: [id], onDelete: SetNull)
   tags             Tag[]                @relation("NoteTags")
-  recording        Recording?
-  transcript       Transcript?
+  recordings       Recording[]
+  transcripts      Transcript[]
   enhancedVersions EnhancedNoteVersion[]
   jobs             ProcessingJob[]
   attachments      Attachment[]
@@ -140,7 +140,7 @@ model Note {
 
 model Recording {
   id          String   @id @default(uuid()) @db.Uuid
-  noteId      String   @unique @db.Uuid
+  noteId      String   @db.Uuid
   userId      String   @db.Uuid
   storagePath String
   mimeType    String   @default("audio/webm")
@@ -148,9 +148,11 @@ model Recording {
   sizeBytes   Int?
   createdAt   DateTime @default(now())
 
-  note Note            @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  jobs ProcessingJob[]
+  note       Note            @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  transcript Transcript?
+  jobs       ProcessingJob[]
 
+  @@index([noteId])
   @@index([userId])
   @@map("recordings")
 }
@@ -178,14 +180,17 @@ model ProcessingJob {
 }
 
 model Transcript {
-  id        String           @id @default(uuid()) @db.Uuid
-  noteId    String           @unique @db.Uuid
-  content   String           @db.Text
-  source    TranscriptSource @default(gemini)
-  createdAt DateTime         @default(now())
+  id          String           @id @default(uuid()) @db.Uuid
+  noteId      String           @db.Uuid
+  recordingId String           @unique @db.Uuid
+  content     String           @db.Text
+  source      TranscriptSource @default(gemini)
+  createdAt   DateTime         @default(now())
 
-  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  recording Recording @relation(fields: [recordingId], references: [id], onDelete: Cascade)
 
+  @@index([noteId])
   @@map("transcripts")
 }
 

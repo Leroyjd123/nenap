@@ -100,7 +100,7 @@ describe('NotesService.list (filters)', () => {
     await ctx.service.list(USER, { hasRecording: true, tag: 'exam', q: 'find', limit: 20, offset: 0 });
     const arg = ctx.prisma.note.findMany.mock.calls[0]![0];
     expect(arg.where.userId).toBe(USER.id);
-    expect(arg.where.recording).toEqual({ isNot: null });
+    expect(arg.where.recordings).toEqual({ some: {} });
     expect(arg.where.tags).toEqual({ some: { name: 'exam' } });
     // Search spans title, content, tags, transcript, and enhanced versions.
     expect(arg.where.OR).toHaveLength(5);

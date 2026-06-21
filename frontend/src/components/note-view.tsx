@@ -18,7 +18,6 @@ import {
   useFolders,
   useImproveNote,
   useNote,
-  useRecordingUrl,
   useUpdateNote,
 } from '@/lib/queries';
 import { fmtDuration } from '@/lib/recordings';
@@ -42,7 +41,6 @@ export function NoteView({ note: initial }: { note: Note }) {
   const updateNote = useUpdateNote(note.id);
   const deleteNote = useDeleteNote();
   const improve = useImproveNote(note.id);
-  const playback = useRecordingUrl(note.id, note.hasRecording);
   const ent = useEntitlements();
   const canImproveAgain = ent.data?.limits.improveAgain ?? true;
 
@@ -110,8 +108,10 @@ export function NoteView({ note: initial }: { note: Note }) {
             <span className="meta">
               · {folderName ? `${folderName} · ` : ''}edited {dateFmt.format(new Date(note.updatedAt))}
             </span>
-            {note.recording?.durationSec != null && (
-              <span className="nc-rec"><Icon name="wave" size={13} /> {fmtDuration(note.recording.durationSec)}</span>
+            {note.recordings.length > 0 && (
+              <span className="nc-rec">
+                <Icon name="wave" size={13} /> {note.recordings.length} clip{note.recordings.length > 1 ? 's' : ''}
+              </span>
             )}
           </div>
 
@@ -175,19 +175,29 @@ export function NoteView({ note: initial }: { note: Note }) {
 
           {tab === 'transcript' && (
             <div>
-              {note.hasRecording && playback.data?.url && (
-                <audio controls src={playback.data.url} style={{ width: '100%', marginBottom: 16 }} />
-              )}
-              {note.transcript ? (
-                <div className="prose-nenap font-mono" style={{ fontSize: 13.5 }}>
-                  <span className="eyebrow">Full transcript</span>
-                  <p style={{ marginTop: 10 }}>{note.transcript.content}</p>
-                </div>
-              ) : (
+              {note.recordings.length === 0 ? (
                 <TabEmpty
-                  title={processing ? 'Transcribing…' : 'No transcript yet'}
-                  hint={processing ? 'Gemini is listening back through your recording.' : 'Transcripts appear here once you record audio with a note.'}
+                  title={processing ? 'Transcribing…' : 'No recordings yet'}
+                  hint={processing ? 'Gemini is listening back through your recording.' : 'Record audio with a note and its transcript appears here.'}
                 />
+              ) : (
+                note.recordings.map((rec, i) => {
+                  const t = note.transcripts.find((tr) => tr.recordingId === rec.id);
+                  return (
+                    <div key={rec.id} style={{ marginBottom: 22 }}>
+                      <span className="eyebrow">
+                        Recording {i + 1}
+                        {rec.durationSec != null ? ` · ${fmtDuration(rec.durationSec)}` : ''}
+                      </span>
+                      {rec.url && <audio controls src={rec.url} style={{ width: '100%', margin: '8px 0' }} />}
+                      {t ? (
+                        <p className="prose-nenap font-mono" style={{ fontSize: 13.5, margin: 0 }}>{t.content}</p>
+                      ) : (
+                        <p className="meta" style={{ marginTop: 4 }}>{processing ? 'Transcribing…' : 'No transcript for this clip.'}</p>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           )}

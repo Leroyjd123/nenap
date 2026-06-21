@@ -12,7 +12,7 @@ const USER: AuthUser = { id: 'user-1', email: 'a@b.com' };
 function makeService() {
   const prisma = {
     note: { findUnique: vi.fn(), update: vi.fn() },
-    recording: { findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn() },
+    recording: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
     processingJob: { create: vi.fn() },
     $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   };
@@ -42,15 +42,26 @@ describe('RecordingsService.sign', () => {
     );
   });
 
-  it('issues a signed upload and upserts the recording at an owner-scoped path', async () => {
+  it('issues a signed upload and creates a new clip at an owner+note-scoped path', async () => {
     ctx.prisma.note.findUnique.mockResolvedValue({ userId: USER.id });
-    ctx.prisma.recording.findUnique.mockResolvedValue(null);
-    ctx.prisma.recording.upsert.mockResolvedValue({ id: 'rec-1' });
+    ctx.prisma.recording.create.mockResolvedValue({ id: 'rec-1' });
 
     const res = await ctx.service.sign(USER, 'note-1', { mimeType: 'audio/webm' });
 
     expect(res.recordingId).toBe('rec-1');
-    expect(ctx.storage.createSignedUpload).toHaveBeenCalledWith('user-1/note-1.webm');
+    // Per-clip path: user/note/<uuid>.webm — clips don't overwrite each other.
+    expect(ctx.storage.createSignedUpload).toHaveBeenCalledWith(
+      expect.stringMatching(/^user-1\/note-1\/[0-9a-f-]+\.webm$/),
+    );
+    expect(ctx.prisma.recording.create).toHaveBeenCalled();
+  });
+
+  it('rejects when the daily recording cap is reached', async () => {
+    ctx.prisma.note.findUnique.mockResolvedValue({ userId: USER.id });
+    ctx.entitlements.canRecord.mockResolvedValueOnce(false);
+    await expect(ctx.service.sign(USER, 'note-1', { mimeType: 'audio/webm' })).rejects.toMatchObject({
+      status: 402,
+    });
   });
 });
 

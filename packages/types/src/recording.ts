@@ -10,6 +10,8 @@ export const Recording = z.object({
   durationSec: z.number().int().min(0).nullable().optional(),
   sizeBytes: z.number().int().min(0).nullable().optional(),
   createdAt: IsoDate,
+  /** Short-lived signed playback URL — populated on the note detail. */
+  url: z.string().nullable().optional(),
 });
 export type Recording = z.infer<typeof Recording>;
 

@@ -135,7 +135,12 @@ export function NoteEditor({ note }: { note?: Note }) {
           </div>
         </div>
         <div className="border-t md:border-t-0 md:border-l border-line">
-          <RecordingRail ref={railRef} ensureNoteId={ensureNoteId} onSaved={(id) => router.push(`/notes/${id}`)} />
+          <RecordingRail
+            ref={railRef}
+            ensureNoteId={ensureNoteId}
+            // Stay in the editor after a clip so you can record several; the rail resets to idle.
+            onSaved={() => toast.show('Recording added — improving in the background. Record another or save.')}
+          />
         </div>
       </div>
 

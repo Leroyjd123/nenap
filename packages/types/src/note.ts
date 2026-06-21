@@ -24,8 +24,8 @@ export type NoteSummary = z.infer<typeof NoteSummary>;
 /** A note in full detail (note view). Original content is never overwritten by AI. */
 export const Note = NoteSummary.extend({
   originalContent: z.string(),
-  recording: Recording.nullable().optional(),
-  transcript: Transcript.nullable().optional(),
+  recordings: z.array(Recording).default([]),
+  transcripts: z.array(Transcript).default([]),
   enhancedVersions: z.array(EnhancedNoteVersion).default([]),
   attachments: z.array(Attachment).default([]),
 });

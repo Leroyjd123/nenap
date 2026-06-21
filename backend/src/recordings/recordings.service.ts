@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CompleteRecordingInput,
@@ -36,29 +37,22 @@ export class RecordingsService {
   async sign(user: AuthUser, noteId: string, input: SignRecordingInput): Promise<SignedUploadResponse> {
     await this.assertNoteOwned(user, noteId);
 
-    const ext = EXT[input.mimeType] ?? 'webm';
-    // Stable, owner-scoped path; a timestamp-free name keeps one file per note.
-    const path = `${user.id}/${noteId}.${ext}`;
-
-    const existing = await this.prisma.recording.findUnique({ where: { noteId } });
-    // Enforce the daily cap only for a brand-new recording — re-recording an existing
-    // note replaces its file and shouldn't count against the limit again.
-    if (!existing && !(await this.entitlements.canRecord(user.id))) {
+    // A note can hold several clips, so every clip is new and counts toward the cap.
+    if (!(await this.entitlements.canRecord(user.id))) {
       throw new HttpException(
         { message: 'You’ve used your recording for today. Upgrade your plan or grab a booster for more.', code: 'RECORDING_LIMIT' },
         HttpStatus.PAYMENT_REQUIRED,
       );
     }
-    if (existing && existing.storagePath !== path) {
-      await this.storage.remove(existing.storagePath);
-    }
 
+    const ext = EXT[input.mimeType] ?? 'webm';
+    const recordingId = randomUUID();
+    // Per-clip path keeps clips from overwriting each other.
+    const path = `${user.id}/${noteId}/${recordingId}.${ext}`;
     const signed = await this.storage.createSignedUpload(path);
 
-    const recording = await this.prisma.recording.upsert({
-      where: { noteId },
-      update: { storagePath: path, mimeType: input.mimeType },
-      create: { noteId, userId: user.id, storagePath: path, mimeType: input.mimeType },
+    const recording = await this.prisma.recording.create({
+      data: { id: recordingId, noteId, userId: user.id, storagePath: path, mimeType: input.mimeType },
     });
 
     return { recordingId: recording.id, path: signed.path, token: signed.token, signedUrl: signed.signedUrl };
@@ -90,10 +84,13 @@ export class RecordingsService {
     return toRecording(updated);
   }
 
-  /** Returns a short-lived signed URL to play back the note's recording. */
+  /** Signed URL for the note's most recent recording (note detail carries all clips' URLs). */
   async getPlaybackUrl(user: AuthUser, noteId: string): Promise<{ url: string | null }> {
     await this.assertNoteOwned(user, noteId);
-    const recording = await this.prisma.recording.findUnique({ where: { noteId } });
+    const recording = await this.prisma.recording.findFirst({
+      where: { noteId },
+      orderBy: { createdAt: 'desc' },
+    });
     if (!recording) return { url: null };
     return { url: await this.storage.createSignedDownloadUrl(recording.storagePath) };
   }

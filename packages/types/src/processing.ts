@@ -21,6 +21,7 @@ export type ProcessingJob = z.infer<typeof ProcessingJob>;
 export const Transcript = z.object({
   id: Uuid,
   noteId: Uuid,
+  recordingId: Uuid,
   content: z.string(),
   source: TranscriptSource,
   createdAt: IsoDate,

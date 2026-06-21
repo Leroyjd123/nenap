@@ -1,6 +1,6 @@
 import { ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import type { JobType, Prisma, ProcessingJob } from '@prisma/client';
+import type { Prisma, ProcessingJob } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { GeminiService } from '../gemini/gemini.service';
@@ -88,7 +88,7 @@ export class ProcessingService {
         data: { status: 'processing', attempts: { increment: 1 }, startedAt: new Date(), error: null },
       });
 
-      await this.execute(job.noteId, job.type);
+      await this.execute(job);
 
       await this.prisma.$transaction([
         this.prisma.processingJob.update({
@@ -114,27 +114,37 @@ export class ProcessingService {
     }
   }
 
-  /** The actual work: produce a transcript (when audio exists) and an enhanced version. */
-  private async execute(noteId: string, type: JobType): Promise<void> {
+  /** The actual work: transcribe this job's clip (if any), then enhance over all clips. */
+  private async execute(job: ProcessingJob): Promise<void> {
+    const noteId = job.noteId;
     const note = await this.prisma.note.findUnique({
       where: { id: noteId },
-      include: { recording: true, transcript: true },
+      select: { id: true, userId: true, folderId: true, originalContent: true, autoOrganise: true },
     });
     if (!note) throw new NotFoundException('Note no longer exists');
 
-    let transcriptText = note.transcript?.content ?? '';
-
-    if (type === 'transcribe' && note.recording) {
-      const blob = await this.storage.downloadFile(note.recording.storagePath);
-      transcriptText = await this.gemini.transcribe(blob, note.recording.mimeType);
-      await this.prisma.transcript.upsert({
-        where: { noteId },
-        update: { content: transcriptText, source: 'gemini' },
-        create: { noteId, content: transcriptText, source: 'gemini' },
-      });
+    // Transcribe the specific recording this job is for (one transcript per clip).
+    if (job.type === 'transcribe' && job.recordingId) {
+      const recording = await this.prisma.recording.findUnique({ where: { id: job.recordingId } });
+      if (recording) {
+        const blob = await this.storage.downloadFile(recording.storagePath);
+        const text = await this.gemini.transcribe(blob, recording.mimeType);
+        await this.prisma.transcript.upsert({
+          where: { recordingId: recording.id },
+          update: { content: text, source: 'gemini', noteId },
+          create: { recordingId: recording.id, noteId, content: text, source: 'gemini' },
+        });
+      }
     }
 
-    const enhanced = await this.gemini.enhance(note.originalContent, transcriptText);
+    // Enhance from the user's text + EVERY clip's transcript, in capture order.
+    const transcripts = await this.prisma.transcript.findMany({
+      where: { noteId },
+      orderBy: { createdAt: 'asc' },
+      select: { content: true },
+    });
+    const combined = transcripts.map((t) => t.content).filter(Boolean).join('\n\n');
+    const enhanced = await this.gemini.enhance(note.originalContent, combined);
 
     const last = await this.prisma.enhancedNoteVersion.findFirst({
       where: { noteId },
@@ -147,7 +157,7 @@ export class ProcessingService {
 
     // Opt-in: let the AI suggest a folder + tags. Best-effort, never fails the job.
     if (note.autoOrganise) {
-      await this.autoOrganise(note.id, note.userId, note.folderId, note.originalContent, transcriptText, enhanced);
+      await this.autoOrganise(note.id, note.userId, note.folderId, note.originalContent, combined, enhanced);
     }
   }
 

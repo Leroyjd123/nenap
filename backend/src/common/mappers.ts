@@ -59,7 +59,14 @@ export function toRecording(r: PrismaRecording): Recording {
 }
 
 export function toTranscript(t: PrismaTranscript): Transcript {
-  return { id: t.id, noteId: t.noteId, content: t.content, source: t.source, createdAt: iso(t.createdAt) };
+  return {
+    id: t.id,
+    noteId: t.noteId,
+    recordingId: t.recordingId,
+    content: t.content,
+    source: t.source,
+    createdAt: iso(t.createdAt),
+  };
 }
 
 export function toEnhanced(e: PrismaEnhanced): EnhancedNoteVersion {
@@ -82,10 +89,11 @@ export function toAttachment(a: PrismaAttachment): Attachment {
 
 type NoteWithRelations = PrismaNote & {
   tags?: PrismaTag[];
-  recording?: PrismaRecording | null;
-  transcript?: PrismaTranscript | null;
+  recordings?: PrismaRecording[];
+  transcripts?: PrismaTranscript[];
   enhancedVersions?: PrismaEnhanced[];
   attachments?: PrismaAttachment[];
+  _count?: { recordings?: number };
 };
 
 export function toNoteSummary(n: NoteWithRelations): NoteSummary {
@@ -96,7 +104,7 @@ export function toNoteSummary(n: NoteWithRelations): NoteSummary {
     title: n.title,
     excerpt: toExcerpt(n.originalContent),
     status: n.status,
-    hasRecording: !!n.recording,
+    hasRecording: (n.recordings?.length ?? 0) > 0 || (n._count?.recordings ?? 0) > 0,
     tags: (n.tags ?? []).map(toTag),
     createdAt: iso(n.createdAt),
     updatedAt: iso(n.updatedAt),
@@ -107,8 +115,8 @@ export function toNote(n: NoteWithRelations): Note {
   return {
     ...toNoteSummary(n),
     originalContent: n.originalContent,
-    recording: n.recording ? toRecording(n.recording) : null,
-    transcript: n.transcript ? toTranscript(n.transcript) : null,
+    recordings: (n.recordings ?? []).map(toRecording),
+    transcripts: (n.transcripts ?? []).map(toTranscript),
     enhancedVersions: (n.enhancedVersions ?? []).map(toEnhanced),
     attachments: (n.attachments ?? []).map(toAttachment),
   };

@@ -9,7 +9,8 @@ function makeService() {
   const prisma = {
     processingJob: { update: vi.fn().mockResolvedValue({}), findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn() },
     note: { findUnique: vi.fn(), update: vi.fn().mockResolvedValue({}) },
-    transcript: { upsert: vi.fn().mockResolvedValue({}) },
+    recording: { findUnique: vi.fn() },
+    transcript: { upsert: vi.fn().mockResolvedValue({}), findMany: vi.fn().mockResolvedValue([]) },
     enhancedNoteVersion: { findFirst: vi.fn(), create: vi.fn().mockResolvedValue({}) },
     $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   };
@@ -45,8 +46,10 @@ describe('ProcessingService transcribe job', () => {
 
   it('transcribes, saves transcript, creates v1 enhanced, completes', async () => {
     ctx.prisma.note.findUnique.mockResolvedValue({
-      id: 'note-1', originalContent: 'orig', recording: { storagePath: 'p', mimeType: 'audio/webm' }, transcript: null,
+      id: 'note-1', userId: 'u', folderId: null, originalContent: 'orig', autoOrganise: false,
     });
+    ctx.prisma.recording.findUnique.mockResolvedValue({ id: 'rec-1', storagePath: 'p', mimeType: 'audio/webm' });
+    ctx.prisma.transcript.findMany.mockResolvedValue([{ content: 'the transcript' }]);
     ctx.prisma.enhancedNoteVersion.findFirst.mockResolvedValue(null);
 
     await runViaSweep(ctx, job());
@@ -61,7 +64,8 @@ describe('ProcessingService transcribe job', () => {
   });
 
   it('bumps the enhanced version number on re-enhance', async () => {
-    ctx.prisma.note.findUnique.mockResolvedValue({ id: 'note-1', originalContent: 'orig', recording: null, transcript: { content: 't' } });
+    ctx.prisma.note.findUnique.mockResolvedValue({ id: 'note-1', userId: 'u', folderId: null, originalContent: 'orig', autoOrganise: false });
+    ctx.prisma.transcript.findMany.mockResolvedValue([{ content: 't' }]);
     ctx.prisma.enhancedNoteVersion.findFirst.mockResolvedValue({ version: 4 });
 
     await runViaSweep(ctx, job({ type: 'enhance', recordingId: null }));
@@ -73,7 +77,8 @@ describe('ProcessingService transcribe job', () => {
   });
 
   it('re-queues on failure while attempts remain', async () => {
-    ctx.prisma.note.findUnique.mockResolvedValue({ id: 'note-1', originalContent: 'o', recording: { storagePath: 'p', mimeType: 'audio/webm' }, transcript: null });
+    ctx.prisma.note.findUnique.mockResolvedValue({ id: 'note-1', userId: 'u', folderId: null, originalContent: 'o', autoOrganise: false });
+    ctx.prisma.recording.findUnique.mockResolvedValue({ id: 'rec-1', storagePath: 'p', mimeType: 'audio/webm' });
     ctx.gemini.transcribe.mockRejectedValueOnce(new Error('Gemini is not configured'));
 
     await runViaSweep(ctx, job({ attempts: 0 }));
@@ -88,7 +93,8 @@ describe('ProcessingService transcribe job', () => {
   });
 
   it('marks failed after the last attempt', async () => {
-    ctx.prisma.note.findUnique.mockResolvedValue({ id: 'note-1', originalContent: 'o', recording: { storagePath: 'p', mimeType: 'audio/webm' }, transcript: null });
+    ctx.prisma.note.findUnique.mockResolvedValue({ id: 'note-1', userId: 'u', folderId: null, originalContent: 'o', autoOrganise: false });
+    ctx.prisma.recording.findUnique.mockResolvedValue({ id: 'rec-1', storagePath: 'p', mimeType: 'audio/webm' });
     ctx.gemini.transcribe.mockRejectedValueOnce(new Error('boom'));
 
     await runViaSweep(ctx, job({ attempts: 2, maxAttempts: 3 }));
