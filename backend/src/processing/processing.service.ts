@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { GeminiService } from '../gemini/gemini.service';
 import { EntitlementsService } from '../billing/entitlements.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import type { AuthUser } from '../auth/auth-user';
 
 const STUCK_AFTER_MS = 3 * 60 * 1000; // re-queue jobs stuck 'processing' this long
@@ -19,6 +20,7 @@ export class ProcessingService {
     private readonly storage: StorageService,
     private readonly gemini: GeminiService,
     private readonly entitlements: EntitlementsService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   /** Fire-and-forget kick after a recording is saved or "Improve again" is tapped. */
@@ -88,7 +90,7 @@ export class ProcessingService {
         data: { status: 'processing', attempts: { increment: 1 }, startedAt: new Date(), error: null },
       });
 
-      await this.execute(job);
+      const userId = await this.execute(job);
 
       await this.prisma.$transaction([
         this.prisma.processingJob.update({
@@ -97,6 +99,7 @@ export class ProcessingService {
         }),
         this.prisma.note.update({ where: { id: job.noteId }, data: { status: 'completed' } }),
       ]);
+      this.analytics.capture(userId, 'note_processed', { type: job.type, noteId: job.noteId });
     } catch (err) {
       const message = (err as Error).message ?? 'Processing failed';
       const attempts = job.attempts + 1;
@@ -108,14 +111,16 @@ export class ProcessingService {
       });
       if (!willRetry) {
         await this.prisma.note.update({ where: { id: job.noteId }, data: { status: 'failed' } });
+        const owner = await this.prisma.note.findUnique({ where: { id: job.noteId }, select: { userId: true } });
+        if (owner) this.analytics.capture(owner.userId, 'note_processing_failed', { type: job.type, noteId: job.noteId });
       }
     } finally {
       this.inFlight.delete(job.id);
     }
   }
 
-  /** The actual work: transcribe this job's clip (if any), then enhance over all clips. */
-  private async execute(job: ProcessingJob): Promise<void> {
+  /** The actual work: transcribe this job's clip (if any), then enhance over all clips. Returns the note owner. */
+  private async execute(job: ProcessingJob): Promise<string> {
     const noteId = job.noteId;
     const note = await this.prisma.note.findUnique({
       where: { id: noteId },
@@ -159,6 +164,7 @@ export class ProcessingService {
     if (note.autoOrganise) {
       await this.autoOrganise(note.id, note.userId, note.folderId, note.originalContent, combined, enhanced);
     }
+    return note.userId;
   }
 
   /** Applies AI-suggested folder (only if none set) and merges suggested tags. */

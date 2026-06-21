@@ -23,6 +23,7 @@ import {
 import { fmtDuration } from '@/lib/recordings';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { capture } from '@/lib/analytics';
 
 type TabKey = 'enhanced' | 'original' | 'transcript';
 
@@ -71,6 +72,7 @@ export function NoteView({ note: initial }: { note: Note }) {
   }
 
   function handleImprove() {
+    capture('note_improved', { noteId: note.id });
     improve.mutate(undefined, {
       onSuccess: () => toast.show('Improving your note…'),
       onError: () => toast.show('Could not start — try again'),

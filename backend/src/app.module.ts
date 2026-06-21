@@ -17,6 +17,7 @@ import { ProcessingModule } from './processing/processing.module';
 import { RecordingsModule } from './recordings/recordings.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { BillingModule } from './billing/billing.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { BillingModule } from './billing/billing.module';
       validate: validateEnv,
     }),
     ScheduleModule.forRoot(),
+    AnalyticsModule,
     // Baseline abuse protection: 120 requests/min per IP. Expensive routes (AI,
     // uploads) tighten this with @Throttle. Keyed by IP (set trust proxy for the
     // real client IP behind Cloud Run / Vercel).

@@ -17,6 +17,10 @@ export const envSchema = z.object({
   RECORDINGS_BUCKET: z.string().default('recordings'),
   GEMINI_API_KEY: z.string().default('placeholder-gemini-key'),
   GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+  // PostHog server-side capture (async lifecycle events the client can't see).
+  // Optional — analytics is a no-op when the key is absent.
+  POSTHOG_KEY: z.string().default(''),
+  POSTHOG_HOST: z.string().default('https://us.i.posthog.com'),
 });
 
 export type Env = z.infer<typeof envSchema>;

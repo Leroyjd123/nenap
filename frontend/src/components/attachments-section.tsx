@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/toast';
 import { qk, useAttachments, useDeleteAttachment, useEntitlements } from '@/lib/queries';
 import { fmtBytes, uploadAttachment } from '@/lib/attachments';
 import { ApiError } from '@/lib/api';
+import { capture } from '@/lib/analytics';
 
 interface Props {
   noteId: string | null;
@@ -44,6 +45,7 @@ export function AttachmentsSection({ noteId, ensureNoteId, editable }: Props) {
       }
       for (const f of Array.from(fileList)) {
         await uploadAttachment(id, f);
+        capture('attachment_added', { kind: f.type.startsWith('image/') ? 'image' : 'file' });
       }
       void qc.invalidateQueries({ queryKey: ['attachments', id] });
       void qc.invalidateQueries({ queryKey: qk.note(id) });

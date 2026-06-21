@@ -21,6 +21,7 @@ import { RecordingRail, type RecordingRailHandle } from './recording-rail';
 import { AttachmentsSection } from '@/components/attachments-section';
 import { useCreateNote, useFolders, useUpdateNote } from '@/lib/queries';
 import { useDocumentTitle } from '@/hooks/use-document-title';
+import { capture } from '@/lib/analytics';
 
 /**
  * Editor for new and existing notes. Capture-first: write straight away, organise at
@@ -98,6 +99,7 @@ export function NoteEditor({ note }: { note?: Note }) {
       }
       // ...then flush an in-progress recording so Save captures both note and audio.
       if (wasRecording) await railRef.current?.finalize();
+      capture(note ? 'note_saved' : 'note_created', { withRecording: wasRecording, autoOrganise: !!autoOrganise });
       setModalOpen(false);
       if (wasRecording) {
         // Async: processing runs in the background — don't block on it.
@@ -148,7 +150,10 @@ export function NoteEditor({ note }: { note?: Note }) {
             ref={railRef}
             ensureNoteId={ensureNoteId}
             // Stay in the editor after a clip so you can record several; the rail resets to idle.
-            onSaved={() => toast.show('Recording added — improving in the background. Record another or save.')}
+            onSaved={() => {
+              capture('recording_added');
+              toast.show('Recording added — improving in the background. Record another or save.');
+            }}
           />
         </div>
       </div>

@@ -27,6 +27,7 @@
     "@prisma/client": "^6.3.0",
     "@supabase/supabase-js": "^2.47.10",
     "jose": "^5.9.6",
+    "posthog-node": "^5.38.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "stripe": "^22.2.2",

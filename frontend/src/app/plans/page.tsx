@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import type { Plan } from '@nenap/types';
 import { AuthGuard } from '@/components/auth-guard';
 import { Brand } from '@/components/brand';
@@ -11,6 +12,7 @@ import { Icon } from '@/components/ui/icon';
 import { useToast } from '@/components/ui/toast';
 import { useEntitlements, useGrantPass, useSetPlan } from '@/lib/queries';
 import { useDocumentTitle } from '@/hooks/use-document-title';
+import { capture } from '@/lib/analytics';
 
 const TIERS: { plan: Plan; name: string; price: string; features: string[] }[] = [
   {
@@ -41,6 +43,7 @@ const BOOSTERS: { days: 1 | 3 | 5; label: string }[] = [
 
 function Plans() {
   useDocumentTitle('Plans — Nenap');
+  useEffect(() => { capture('plan_viewed'); }, []);
   const toast = useToast();
   const ent = useEntitlements();
   const setPlan = useSetPlan();

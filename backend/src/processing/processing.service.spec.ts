@@ -4,6 +4,7 @@ import type { PrismaService } from '../prisma/prisma.service';
 import type { StorageService } from '../storage/storage.service';
 import type { GeminiService } from '../gemini/gemini.service';
 import type { EntitlementsService } from '../billing/entitlements.service';
+import type { AnalyticsService } from '../analytics/analytics.service';
 
 function makeService() {
   const prisma = {
@@ -24,6 +25,7 @@ function makeService() {
     storage as unknown as StorageService,
     gemini as unknown as GeminiService,
     { canImproveAgain: vi.fn().mockResolvedValue(true) } as unknown as EntitlementsService,
+    { capture: vi.fn() } as unknown as AnalyticsService,
   );
   return { service, prisma, storage, gemini };
 }
