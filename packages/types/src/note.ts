@@ -3,6 +3,7 @@ import { IsoDate, Uuid } from './common.js';
 import { NoteStatus } from './enums.js';
 import { Tag } from './tag.js';
 import { Recording } from './recording.js';
+import { Attachment } from './attachment.js';
 import { EnhancedNoteVersion, Transcript } from './processing.js';
 
 /** A note as returned in list views (lightweight — for dashboard cards). */
@@ -26,6 +27,7 @@ export const Note = NoteSummary.extend({
   recording: Recording.nullable().optional(),
   transcript: Transcript.nullable().optional(),
   enhancedVersions: z.array(EnhancedNoteVersion).default([]),
+  attachments: z.array(Attachment).default([]),
 });
 export type Note = z.infer<typeof Note>;
 

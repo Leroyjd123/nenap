@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/toast';
 import { TiptapEditor } from './tiptap-editor';
 import { SaveNoteModal } from './save-note-modal';
 import { RecordingRail, type RecordingRailHandle } from './recording-rail';
+import { AttachmentsSection } from '@/components/attachments-section';
 import { useCreateNote, useFolders, useUpdateNote } from '@/lib/queries';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 
@@ -130,6 +131,7 @@ export function NoteEditor({ note }: { note?: Note }) {
               className="w-full font-display text-[28px] font-semibold text-ink bg-transparent border-none outline-none placeholder:text-ink-3 mb-4"
             />
             <TiptapEditor content={content} onChange={setContent} />
+            <AttachmentsSection noteId={effectiveId} ensureNoteId={ensureNoteId} editable />
           </div>
         </div>
         <div className="border-t md:border-t-0 md:border-l border-line">

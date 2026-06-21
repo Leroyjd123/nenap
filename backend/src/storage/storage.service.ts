@@ -37,11 +37,11 @@ export class StorageService {
   }
 
   /** Issues a one-time signed URL the browser uses to upload directly to the bucket. */
-  async createSignedUpload(path: string): Promise<SignedUpload> {
+  async createSignedUpload(path: string, bucket = this.bucket): Promise<SignedUpload> {
     if (!this.client) {
       throw new ServiceUnavailableException('Storage is not configured yet');
     }
-    const { data, error } = await this.client.storage.from(this.bucket).createSignedUploadUrl(path);
+    const { data, error } = await this.client.storage.from(bucket).createSignedUploadUrl(path);
     if (error || !data) {
       this.logger.error(`createSignedUploadUrl failed: ${error?.message}`);
       throw new ServiceUnavailableException('Could not create upload URL');
@@ -50,9 +50,9 @@ export class StorageService {
   }
 
   /** Downloads a stored object's bytes (server-side, for sending to Gemini). */
-  async downloadFile(path: string): Promise<Blob> {
+  async downloadFile(path: string, bucket = this.bucket): Promise<Blob> {
     if (!this.client) throw new ServiceUnavailableException('Storage is not configured yet');
-    const { data, error } = await this.client.storage.from(this.bucket).download(path);
+    const { data, error } = await this.client.storage.from(bucket).download(path);
     if (error || !data) {
       this.logger.error(`download failed for ${path}: ${error?.message}`);
       throw new ServiceUnavailableException('Could not download recording');
@@ -60,19 +60,19 @@ export class StorageService {
     return data;
   }
 
-  /** A time-limited URL to play back / download a stored recording. */
-  async createSignedDownloadUrl(path: string, expiresInSec = 3600): Promise<string | null> {
+  /** A time-limited URL to play back / download a stored object. */
+  async createSignedDownloadUrl(path: string, expiresInSec = 3600, bucket = this.bucket): Promise<string | null> {
     if (!this.client) return null;
     const { data, error } = await this.client.storage
-      .from(this.bucket)
+      .from(bucket)
       .createSignedUrl(path, expiresInSec);
     return error ? null : (data?.signedUrl ?? null);
   }
 
   /** Best-effort delete — logs rather than throws so it never blocks a note deletion. */
-  async remove(path: string): Promise<void> {
+  async remove(path: string, bucket = this.bucket): Promise<void> {
     if (!this.client) return;
-    const { error } = await this.client.storage.from(this.bucket).remove([path]);
+    const { error } = await this.client.storage.from(bucket).remove([path]);
     if (error) {
       this.logger.warn(`Failed to delete storage object ${path}: ${error.message}`);
     }

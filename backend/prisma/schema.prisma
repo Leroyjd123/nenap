@@ -43,6 +43,11 @@ enum Plan {
   pro
 }
 
+enum AttachmentKind {
+  image
+  file
+}
+
 model User {
   id          String   @id @db.Uuid // = Supabase auth user id
   email       String   @unique
@@ -125,6 +130,7 @@ model Note {
   transcript       Transcript?
   enhancedVersions EnhancedNoteVersion[]
   jobs             ProcessingJob[]
+  attachments      Attachment[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, folderId])
@@ -195,4 +201,22 @@ model EnhancedNoteVersion {
   @@unique([noteId, version])
   @@index([noteId])
   @@map("enhanced_note_versions")
+}
+
+model Attachment {
+  id          String         @id @default(uuid()) @db.Uuid
+  noteId      String         @db.Uuid
+  userId      String         @db.Uuid
+  kind        AttachmentKind
+  storagePath String
+  mimeType    String
+  name        String         @db.VarChar(255)
+  sizeBytes   Int            @default(0)
+  createdAt   DateTime       @default(now())
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@index([userId])
+  @@map("attachments")
 }

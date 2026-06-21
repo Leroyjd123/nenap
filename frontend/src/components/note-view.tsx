@@ -11,6 +11,7 @@ import { Segmented } from '@/components/ui/segmented';
 import { Tag } from '@/components/ui/tag';
 import { useToast } from '@/components/ui/toast';
 import { SaveNoteModal } from '@/components/editor/save-note-modal';
+import { AttachmentsSection } from '@/components/attachments-section';
 import {
   useDeleteNote,
   useEntitlements,
@@ -189,6 +190,8 @@ export function NoteView({ note: initial }: { note: Note }) {
               )}
             </div>
           )}
+
+          <AttachmentsSection noteId={note.id} editable />
         </div>
       </div>
 

@@ -18,6 +18,7 @@ const DETAIL_INCLUDE = {
   recording: true,
   transcript: true,
   enhancedVersions: { orderBy: { version: 'desc' } },
+  attachments: { orderBy: { createdAt: 'asc' } },
 } satisfies Prisma.NoteInclude;
 
 @Injectable()
@@ -111,14 +112,21 @@ export class NotesService {
 
   async remove(user: AuthUser, id: string): Promise<void> {
     await this.assertNoteOwned(user, id);
-    // Storage isn't cascade-linked to the DB, so remove the audio file first —
-    // before the row (and its storagePath) is gone. remove() is best-effort.
+    // Storage isn't cascade-linked to the DB, so remove the files first — before the
+    // rows (and their storagePaths) are gone. remove() is best-effort.
     const recording = await this.prisma.recording.findUnique({
       where: { noteId: id },
       select: { storagePath: true },
     });
     if (recording) await this.storage.remove(recording.storagePath);
-    // Cascades remove recording, transcript, enhanced versions, and jobs.
+
+    const attachments = await this.prisma.attachment.findMany({
+      where: { noteId: id },
+      select: { storagePath: true },
+    });
+    await Promise.all(attachments.map((a) => this.storage.remove(a.storagePath, 'attachments')));
+
+    // Cascades remove recording, transcript, enhanced versions, jobs, and attachments.
     await this.prisma.note.delete({ where: { id } });
   }
 

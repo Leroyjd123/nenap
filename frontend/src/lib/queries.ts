@@ -7,6 +7,7 @@ import {
   type UseQueryOptions,
 } from '@tanstack/react-query';
 import type {
+  Attachment,
   CreateFolderInput,
   CreateNoteInput,
   Entitlements,
@@ -160,6 +161,27 @@ export function useGrantPass() {
     mutationFn: (days: 1 | 3 | 5) =>
       apiFetch<void>('/billing/dev/pass', { method: 'POST', body: JSON.stringify({ days, level: 'pro' }) }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: qk.entitlements() }),
+  });
+}
+
+/** A note's attachments, each with a short-lived signed URL for display/download. */
+export function useAttachments(noteId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ['attachments', noteId],
+    queryFn: () => apiFetch<Attachment[]>(`/notes/${noteId}/attachments`),
+    enabled: enabled && !!noteId,
+  });
+}
+
+export function useDeleteAttachment(noteId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (attachmentId: string) =>
+      apiFetch<void>(`/notes/${noteId}/attachments/${attachmentId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['attachments', noteId] });
+      void qc.invalidateQueries({ queryKey: qk.note(noteId) });
+    },
   });
 }
 

@@ -13,6 +13,7 @@ import { StorageModule } from './storage/storage.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { ProcessingModule } from './processing/processing.module';
 import { RecordingsModule } from './recordings/recordings.module';
+import { AttachmentsModule } from './attachments/attachments.module';
 import { BillingModule } from './billing/billing.module';
 
 @Module({
@@ -34,6 +35,7 @@ import { BillingModule } from './billing/billing.module';
     FoldersModule,
     TagsModule,
     RecordingsModule,
+    AttachmentsModule,
   ],
 })
 export class AppModule {}

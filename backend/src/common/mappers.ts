@@ -5,6 +5,7 @@ import type {
   Recording as PrismaRecording,
   Transcript as PrismaTranscript,
   EnhancedNoteVersion as PrismaEnhanced,
+  Attachment as PrismaAttachment,
 } from '@prisma/client';
 import type {
   Folder,
@@ -14,6 +15,7 @@ import type {
   Recording,
   Transcript,
   EnhancedNoteVersion,
+  Attachment,
 } from '@nenap/types';
 
 const iso = (d: Date): string => d.toISOString();
@@ -64,11 +66,26 @@ export function toEnhanced(e: PrismaEnhanced): EnhancedNoteVersion {
   return { id: e.id, noteId: e.noteId, version: e.version, content: e.content, createdAt: iso(e.createdAt) };
 }
 
+export function toAttachment(a: PrismaAttachment): Attachment {
+  return {
+    id: a.id,
+    noteId: a.noteId,
+    userId: a.userId,
+    kind: a.kind,
+    storagePath: a.storagePath,
+    mimeType: a.mimeType,
+    name: a.name,
+    sizeBytes: a.sizeBytes,
+    createdAt: iso(a.createdAt),
+  };
+}
+
 type NoteWithRelations = PrismaNote & {
   tags?: PrismaTag[];
   recording?: PrismaRecording | null;
   transcript?: PrismaTranscript | null;
   enhancedVersions?: PrismaEnhanced[];
+  attachments?: PrismaAttachment[];
 };
 
 export function toNoteSummary(n: NoteWithRelations): NoteSummary {
@@ -93,5 +110,6 @@ export function toNote(n: NoteWithRelations): Note {
     recording: n.recording ? toRecording(n.recording) : null,
     transcript: n.transcript ? toTranscript(n.transcript) : null,
     enhancedVersions: (n.enhancedVersions ?? []).map(toEnhanced),
+    attachments: (n.attachments ?? []).map(toAttachment),
   };
 }
