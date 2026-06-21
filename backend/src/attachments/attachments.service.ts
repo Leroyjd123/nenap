@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Attachment, CreateAttachmentInput, SignAttachmentInput, SignedAttachmentResponse } from '@nenap/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
@@ -8,6 +15,24 @@ import { toAttachment } from '../common/mappers';
 import type { AuthUser } from '../auth/auth-user';
 
 const BUCKET = 'attachments';
+
+// Server-side allowlists — never trust the client's claimed type.
+const IMAGE_MIME = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/heic', 'image/heif']);
+const FILE_MIME = new Set([
+  'application/pdf',
+  'text/plain',
+  'text/markdown',
+  'text/csv',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/zip',
+]);
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
 
 function paymentRequired(message: string, code: string): never {
   throw new HttpException({ message, code }, HttpStatus.PAYMENT_REQUIRED);
@@ -24,6 +49,16 @@ export class AttachmentsService {
   /** Step 1 — enforce plan limits, then return a signed upload slot. No row yet. */
   async sign(user: AuthUser, noteId: string, input: SignAttachmentInput): Promise<SignedAttachmentResponse> {
     await this.assertNoteOwned(user, noteId);
+
+    // Validate type + size by kind before anything else.
+    if (input.kind === 'image') {
+      if (!IMAGE_MIME.has(input.mimeType)) throw new BadRequestException('Unsupported image type');
+      if (input.sizeBytes > MAX_IMAGE_BYTES) throw new BadRequestException('Image is too large (max 10 MB)');
+    } else {
+      if (!FILE_MIME.has(input.mimeType)) throw new BadRequestException('Unsupported file type');
+      if (input.sizeBytes > MAX_FILE_BYTES) throw new BadRequestException('File is too large (max 25 MB)');
+    }
+
     const { limits } = await this.entitlements.resolve(user.id);
 
     if (input.kind === 'file' && !limits.fileUploads) {

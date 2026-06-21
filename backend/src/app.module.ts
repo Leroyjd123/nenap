@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/env';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -23,6 +25,10 @@ import { BillingModule } from './billing/billing.module';
       validate: validateEnv,
     }),
     ScheduleModule.forRoot(),
+    // Baseline abuse protection: 120 requests/min per IP. Expensive routes (AI,
+    // uploads) tighten this with @Throttle. Keyed by IP (set trust proxy for the
+    // real client IP behind Cloud Run / Vercel).
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -36,6 +42,10 @@ import { BillingModule } from './billing/billing.module';
     TagsModule,
     RecordingsModule,
     AttachmentsModule,
+  ],
+  providers: [
+    // Apply the throttler globally (runs alongside the auth guard).
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

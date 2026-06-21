@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateAttachmentInput, SignAttachmentInput } from '@nenap/types';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -17,6 +18,7 @@ export class AttachmentsController {
     return this.attachments.list(user, noteId);
   }
 
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @Post('sign')
   sign(
     @CurrentUser() user: AuthUser,

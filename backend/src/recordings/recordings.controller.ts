@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CompleteRecordingInput, SignRecordingInput } from '@nenap/types';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -12,6 +13,7 @@ import { RecordingsService } from './recordings.service';
 export class RecordingsController {
   constructor(private readonly recordings: RecordingsService) {}
 
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @Post('sign')
   sign(
     @CurrentUser() user: AuthUser,

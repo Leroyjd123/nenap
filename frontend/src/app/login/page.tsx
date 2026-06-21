@@ -14,9 +14,11 @@ import { useDocumentTitle } from '@/hooks/use-document-title';
 
 type Mode = 'signin' | 'signup';
 
-// DEV-ONLY demo account — remove before production.
-const DEMO_EMAIL = 'ljdstore@yopmail.com';
-const DEMO_PASSWORD = 'NenapDemo123!';
+// DEV-ONLY demo account. Gated behind NEXT_PUBLIC_ENABLE_DEMO so neither the button
+// nor the credentials are present in a production build (set the vars only in dev).
+const DEMO_ENABLED = process.env.NEXT_PUBLIC_ENABLE_DEMO === 'true';
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? '';
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? '';
 
 const GRADIENT_BG = {
   background:
@@ -192,16 +194,18 @@ export default function LoginPage() {
           </span>
         </p>
 
-        {/* DEV-ONLY demo access — remove before production */}
-        <button
-          type="button"
-          onClick={handleDemo}
-          disabled={busy}
-          className="meta"
-          style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
-        >
-          ↳ continue to demo account (dev only)
-        </button>
+        {/* DEV-ONLY demo access — only rendered when explicitly enabled */}
+        {DEMO_ENABLED && DEMO_EMAIL && (
+          <button
+            type="button"
+            onClick={handleDemo}
+            disabled={busy}
+            className="meta"
+            style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            ↳ continue to demo account (dev only)
+          </button>
+        )}
 
         <p className="meta" style={{ marginTop: 14 }}>
           By continuing you agree to our{' '}

@@ -23,6 +23,7 @@ import {
 } from '@/lib/queries';
 import { fmtDuration } from '@/lib/recordings';
 import { useDocumentTitle } from '@/hooks/use-document-title';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 type TabKey = 'enhanced' | 'original' | 'transcript';
 
@@ -160,7 +161,7 @@ export function NoteView({ note: initial }: { note: Note }) {
 
           {tab === 'enhanced' &&
             (latestEnhanced ? (
-              <div className="prose-nenap reveal" dangerouslySetInnerHTML={{ __html: latestEnhanced }} />
+              <div className="prose-nenap reveal" dangerouslySetInnerHTML={{ __html: sanitizeHtml(latestEnhanced) }} />
             ) : (
               <TabEmpty
                 title={processing ? 'Improving your note…' : 'No enhanced version yet'}
@@ -169,7 +170,7 @@ export function NoteView({ note: initial }: { note: Note }) {
             ))}
 
           {tab === 'original' && (
-            <div className="prose-nenap" dangerouslySetInnerHTML={{ __html: note.originalContent || '<p>This note is empty.</p>' }} />
+            <div className="prose-nenap" dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.originalContent || '<p>This note is empty.</p>') }} />
           )}
 
           {tab === 'transcript' && (
