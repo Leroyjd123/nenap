@@ -12,8 +12,10 @@ import { Icon } from '@/components/ui/icon';
 import { NoteCardSkeleton } from '@/components/ui/skeleton';
 import { useFolders, useNotes } from '@/lib/queries';
 import { useDebounced } from '@/hooks/use-debounced';
+import { useDocumentTitle } from '@/hooks/use-document-title';
 
 export function Dashboard({ email }: { email?: string }) {
+  useDocumentTitle('Your notes — Nenap');
   const router = useRouter();
   const [folderId, setFolderId] = useState<string | undefined>();
   const [withRec, setWithRec] = useState(false);

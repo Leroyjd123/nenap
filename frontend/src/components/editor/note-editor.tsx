@@ -10,12 +10,14 @@ import { TiptapEditor } from './tiptap-editor';
 import { SaveNoteModal } from './save-note-modal';
 import { RecordingRail, type RecordingRailHandle } from './recording-rail';
 import { useCreateNote, useFolders, useUpdateNote } from '@/lib/queries';
+import { useDocumentTitle } from '@/hooks/use-document-title';
 
 /**
  * Editor for new and existing notes. Capture-first: write straight away, organise at
  * save. Recording attaches to the note (a draft is created on first record if needed).
  */
 export function NoteEditor({ note }: { note?: Note }) {
+  useDocumentTitle(note ? 'Editing note — Nenap' : 'New note — Nenap');
   const router = useRouter();
   const toast = useToast();
   const folders = useFolders();

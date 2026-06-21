@@ -11,10 +11,12 @@ import { useToast } from '@/components/ui/toast';
 import { useRecorder } from '@/hooks/use-recorder';
 import { useSpeechTranscript } from '@/hooks/use-speech-transcript';
 import { useCreateNote, useFolders } from '@/lib/queries';
+import { useDocumentTitle } from '@/hooks/use-document-title';
 import { fmtDuration, uploadRecording } from '@/lib/recordings';
 
 /** Record-first capture (from the dashboard): record now, name it on save. */
 export function RecordFirst() {
+  useDocumentTitle('Record — Nenap');
   const router = useRouter();
   const toast = useToast();
   const recorder = useRecorder();

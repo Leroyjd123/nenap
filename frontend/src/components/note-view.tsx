@@ -21,6 +21,7 @@ import {
   useUpdateNote,
 } from '@/lib/queries';
 import { fmtDuration } from '@/lib/recordings';
+import { useDocumentTitle } from '@/hooks/use-document-title';
 
 type TabKey = 'enhanced' | 'original' | 'transcript';
 
@@ -34,6 +35,7 @@ export function NoteView({ note: initial }: { note: Note }) {
   // Re-fetch (and poll while processing) so the enhanced note appears when ready.
   const live = useNote(initial.id, { poll: true });
   const note = live.data ?? initial;
+  useDocumentTitle(`${note.title || 'Untitled'} — Nenap`);
 
   const updateNote = useUpdateNote(note.id);
   const deleteNote = useDeleteNote();

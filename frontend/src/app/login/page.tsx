@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/icon';
 import { isSupabaseConfigured } from '@/lib/env';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { humanizeAuthError } from '@/lib/auth-error';
+import { useDocumentTitle } from '@/hooks/use-document-title';
 
 type Mode = 'signin' | 'signup';
 
@@ -22,6 +23,7 @@ const GRADIENT_BG = {
 };
 
 export default function LoginPage() {
+  useDocumentTitle('Sign in — Nenap');
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
