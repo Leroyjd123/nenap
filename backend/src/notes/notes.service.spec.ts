@@ -14,11 +14,13 @@ function makeService() {
     note: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
     folder: { findUnique: vi.fn() },
+    $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   };
   const users = { ensureUser: vi.fn().mockResolvedValue(undefined) };
   const storage = { remove: vi.fn().mockResolvedValue(undefined) };

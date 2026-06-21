@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IsoDate, Uuid } from './common.js';
+import { IsoDate, Uuid, paginated } from './common.js';
 import { NoteStatus } from './enums.js';
 import { Tag } from './tag.js';
 import { Recording } from './recording.js';
@@ -20,6 +20,10 @@ export const NoteSummary = z.object({
   updatedAt: IsoDate,
 });
 export type NoteSummary = z.infer<typeof NoteSummary>;
+
+/** Paginated list response for the dashboard. */
+export const NotesPage = paginated(NoteSummary);
+export type NotesPage = z.infer<typeof NotesPage>;
 
 /** A note in full detail (note view). Original content is never overwritten by AI. */
 export const Note = NoteSummary.extend({

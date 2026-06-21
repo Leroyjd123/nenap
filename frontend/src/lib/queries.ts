@@ -15,7 +15,7 @@ import type {
   Folder,
   ListNotesQuery,
   Note,
-  NoteSummary,
+  NotesPage,
   Plan,
   Tag,
   UpdateNoteInput,
@@ -42,11 +42,11 @@ function toQueryString(q: Partial<ListNotesQuery>): string {
 
 export function useNotes(
   query: Partial<ListNotesQuery> = {},
-  options?: Partial<UseQueryOptions<NoteSummary[]>>,
+  options?: Partial<UseQueryOptions<NotesPage>>,
 ) {
   return useQuery({
     queryKey: qk.notes(query),
-    queryFn: () => apiFetch<NoteSummary[]>(`/notes${toQueryString(query)}`),
+    queryFn: () => apiFetch<NotesPage>(`/notes${toQueryString(query)}`),
     ...options,
   });
 }

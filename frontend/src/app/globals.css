@@ -377,3 +377,9 @@ body {
 .footer-link { color: var(--ink-2); font-size: 13.5px; text-decoration: none; transition: color 0.15s; }
 .footer-link:hover { color: var(--accent-deep); }
 .footer-bottom { border-top: 1px solid var(--line); padding: 14px var(--pad); text-align: center; }
+
+/* Compact list/table row for the dashboard list view */
+.note-row { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); text-decoration: none; color: inherit; transition: background 0.12s ease, border-color 0.12s ease; }
+.note-row:hover { background: var(--surface-2); border-color: var(--line-2); }
+.note-row .nr-title { font-family: var(--font-display); font-weight: 600; font-size: 15.5px; color: var(--ink); }
+.note-row .nr-ex { color: var(--ink-2); font-size: 13px; }

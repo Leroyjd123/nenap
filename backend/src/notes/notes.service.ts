@@ -4,7 +4,7 @@ import type {
   CreateNoteInput,
   ListNotesQuery,
   Note,
-  NoteSummary,
+  NotesPage,
   UpdateNoteInput,
 } from '@nenap/types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -29,7 +29,7 @@ export class NotesService {
     private readonly storage: StorageService,
   ) {}
 
-  async list(user: AuthUser, query: ListNotesQuery): Promise<NoteSummary[]> {
+  async list(user: AuthUser, query: ListNotesQuery): Promise<NotesPage> {
     const where: Prisma.NoteWhereInput = { userId: user.id };
 
     if (query.folderId) where.folderId = query.folderId;
@@ -55,14 +55,17 @@ export class NotesService {
       ];
     }
 
-    const notes = await this.prisma.note.findMany({
-      where,
-      include: { tags: true, _count: { select: { recordings: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: query.limit,
-      skip: query.offset,
-    });
-    return notes.map(toNoteSummary);
+    const [notes, total] = await this.prisma.$transaction([
+      this.prisma.note.findMany({
+        where,
+        include: { tags: true, _count: { select: { recordings: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: query.limit,
+        skip: query.offset,
+      }),
+      this.prisma.note.count({ where }),
+    ]);
+    return { items: notes.map(toNoteSummary), total, limit: query.limit, offset: query.offset };
   }
 
   async get(user: AuthUser, id: string): Promise<Note> {
