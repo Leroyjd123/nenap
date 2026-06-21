@@ -11,6 +11,7 @@ interface SpeechRecognitionLike {
   stop: () => void;
   onresult: ((e: { resultIndex: number; results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
   onerror: ((e: { error?: string }) => void) | null;
+  onend: (() => void) | null;
 }
 type SRCtor = new () => SpeechRecognitionLike;
 
@@ -31,10 +32,14 @@ export function useSpeechTranscript() {
   const [interim, setInterim] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
+  // Web Speech ends itself on every pause; this flag tells onend to restart while
+  // we're still meant to be listening (the real "live transcript" fix).
+  const listeningRef = useRef(false);
 
   const start = useCallback(() => {
     if (!ctor) return;
     setError(null);
+    listeningRef.current = true;
     const rec = new ctor();
     rec.continuous = true;
     rec.interimResults = true;
@@ -54,6 +59,17 @@ export function useSpeechTranscript() {
         setError('Live transcript paused — the recording is still capturing audio.');
       }
     };
+    rec.onend = () => {
+      // Chrome stops recognition after each silence; transparently resume so the
+      // transcript keeps flowing for the whole recording.
+      if (listeningRef.current && recRef.current) {
+        try {
+          recRef.current.start();
+        } catch {
+          /* a restart can race the previous end; ignore */
+        }
+      }
+    };
     try {
       rec.start();
       recRef.current = rec;
@@ -63,6 +79,7 @@ export function useSpeechTranscript() {
   }, [ctor]);
 
   const stop = useCallback(() => {
+    listeningRef.current = false;
     recRef.current?.stop();
     recRef.current = null;
     setInterim('');

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/icon';
 import { isSupabaseConfigured } from '@/lib/env';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { humanizeAuthError } from '@/lib/auth-error';
 
 type Mode = 'signin' | 'signup';
 
@@ -57,7 +58,7 @@ export default function LoginPage() {
         password: DEMO_PASSWORD,
       });
       if (authError) {
-        setError(authError.message);
+        setError(humanizeAuthError(authError.message));
         return;
       }
       router.push('/');
@@ -83,7 +84,7 @@ export default function LoginPage() {
           options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
         if (authError) {
-          setError(authError.message);
+          setError(humanizeAuthError(authError.message));
           return;
         }
         if (!data.session) {
@@ -94,7 +95,7 @@ export default function LoginPage() {
       } else {
         const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) {
-          setError(authError.message);
+          setError(humanizeAuthError(authError.message));
           return;
         }
         router.push('/');

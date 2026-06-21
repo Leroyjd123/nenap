@@ -42,10 +42,15 @@ export class NotesService {
       };
     }
     if (query.q) {
-      // Phase 2: title/content contains. Postgres full-text search lands in Phase 5.
+      // Substring match across everything a user might search by. (A Postgres
+      // tsvector full-text index is the planned performance upgrade.)
+      const q = query.q;
       where.OR = [
-        { title: { contains: query.q, mode: 'insensitive' } },
-        { originalContent: { contains: query.q, mode: 'insensitive' } },
+        { title: { contains: q, mode: 'insensitive' } },
+        { originalContent: { contains: q, mode: 'insensitive' } },
+        { tags: { some: { name: { contains: q, mode: 'insensitive' } } } },
+        { transcript: { content: { contains: q, mode: 'insensitive' } } },
+        { enhancedVersions: { some: { content: { contains: q, mode: 'insensitive' } } } },
       ];
     }
 

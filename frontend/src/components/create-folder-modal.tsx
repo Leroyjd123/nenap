@@ -36,7 +36,7 @@ export function CreateFolderModal({ open, onClose }: { open: boolean; onClose: (
           <Button variant="ghost" onClick={onClose} disabled={createFolder.isPending}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={createFolder.isPending || !name.trim()}>
+          <Button onClick={submit} loading={createFolder.isPending} disabled={!name.trim()}>
             {createFolder.isPending ? 'Creating…' : 'Create folder'}
           </Button>
         </>

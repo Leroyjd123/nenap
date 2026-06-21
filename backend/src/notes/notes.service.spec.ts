@@ -102,6 +102,7 @@ describe('NotesService.list (filters)', () => {
     expect(arg.where.userId).toBe(USER.id);
     expect(arg.where.recording).toEqual({ isNot: null });
     expect(arg.where.tags).toEqual({ some: { name: 'exam' } });
-    expect(arg.where.OR).toHaveLength(2);
+    // Search spans title, content, tags, transcript, and enhanced versions.
+    expect(arg.where.OR).toHaveLength(5);
   });
 });

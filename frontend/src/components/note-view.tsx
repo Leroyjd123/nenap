@@ -114,7 +114,7 @@ export function NoteView({ note: initial }: { note: Note }) {
           {failed && (
             <div style={{ marginTop: 16, background: 'var(--rec-tint)', border: '1px solid var(--rec-line)', borderRadius: 'var(--r-sm)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ color: 'var(--rec)', fontSize: 13.5, flex: 1 }}>Processing didn’t finish.</span>
-              <Button variant="soft" size="sm" onClick={handleImprove} disabled={improve.isPending}>Retry</Button>
+              <Button variant="soft" size="sm" onClick={handleImprove} loading={improve.isPending}>Retry</Button>
             </div>
           )}
 
@@ -129,7 +129,7 @@ export function NoteView({ note: initial }: { note: Note }) {
               ]}
             />
             {tab === 'enhanced' && latestEnhanced && (
-              <Button size="sm" onClick={handleImprove} disabled={improve.isPending || processing}>
+              <Button size="sm" onClick={handleImprove} loading={improve.isPending} disabled={processing}>
                 <Icon name="spark" size={16} /> Improve again
               </Button>
             )}

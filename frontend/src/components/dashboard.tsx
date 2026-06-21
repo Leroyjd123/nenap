@@ -18,7 +18,14 @@ export function Dashboard({ email }: { email?: string }) {
   const [folderId, setFolderId] = useState<string | undefined>();
   const [withRec, setWithRec] = useState(false);
   const [search, setSearch] = useState('');
+  const [navTo, setNavTo] = useState<string | null>(null);
   const debouncedSearch = useDebounced(search, 250);
+
+  // Navigation can take a beat; show a spinner immediately so the click registers.
+  const go = (path: string) => {
+    setNavTo(path);
+    router.push(path);
+  };
 
   const query = useMemo<Partial<ListNotesQuery>>(
     () => ({ folderId, hasRecording: withRec || undefined, q: debouncedSearch || undefined }),
@@ -36,10 +43,10 @@ export function Dashboard({ email }: { email?: string }) {
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search notes, tags…" />
       </label>
       <span className="grow" style={{ flex: 1 }} />
-      <Button variant="rec" onClick={() => router.push('/record')}>
+      <Button variant="rec" onClick={() => go('/record')} loading={navTo === '/record'}>
         <Icon name="mic" size={17} /> Record
       </Button>
-      <Button onClick={() => router.push('/notes/new')}>
+      <Button onClick={() => go('/notes/new')} loading={navTo === '/notes/new'}>
         <Icon name="plus" size={17} /> New note
       </Button>
     </>
@@ -87,7 +94,7 @@ export function Dashboard({ email }: { email?: string }) {
         <EmptyState
           title="The space is yours when you're ready."
           hint="Start a note and write naturally. You can record alongside it any time."
-          action={<Button onClick={() => router.push('/notes/new')}>Create your first note</Button>}
+          action={<Button onClick={() => go('/notes/new')} loading={navTo === '/notes/new'}>Create your first note</Button>}
         />
       ) : (
         <div className="grid sm:grid-cols-2 gap-3.5">

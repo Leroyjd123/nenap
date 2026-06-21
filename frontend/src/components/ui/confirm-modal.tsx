@@ -40,7 +40,7 @@ export function ConfirmModal({
           </Button>
           <Button
             onClick={onConfirm}
-            disabled={busy}
+            loading={busy}
             // Solid clay for destructive actions, matching the Hi-Fi delete modal.
             style={destructive ? { background: 'var(--rec)', color: '#fff', boxShadow: 'none', borderColor: 'var(--rec)' } : undefined}
           >

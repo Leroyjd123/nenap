@@ -1,14 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Note } from '@nenap/types';
 import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { TiptapEditor } from './tiptap-editor';
 import { SaveNoteModal } from './save-note-modal';
-import { RecordingRail } from './recording-rail';
+import { RecordingRail, type RecordingRailHandle } from './recording-rail';
 import { useCreateNote, useFolders, useUpdateNote } from '@/lib/queries';
 
 /**
@@ -27,6 +27,7 @@ export function NoteEditor({ note }: { note?: Note }) {
   const [title, setTitle] = useState(note?.title ?? '');
   const [content, setContent] = useState(note?.originalContent ?? '');
   const [modalOpen, setModalOpen] = useState(false);
+  const railRef = useRef<RecordingRailHandle>(null);
 
   useEffect(() => {
     if (note) {
@@ -39,21 +40,27 @@ export function NoteEditor({ note }: { note?: Note }) {
   const plainBody = content.replace(/<[^>]*>/g, '').trim();
   const isEmpty = !title.trim() && !plainBody;
 
-  /** Used by both Save and Record: persist current content, returning the note id. */
+  /**
+   * Used by both Save and Record: persist current content, returning the note id.
+   * Creates a draft even when empty so you can start recording immediately on a new note.
+   */
   async function ensureNoteId(): Promise<string | null> {
-    if (isEmpty) return null;
     if (effectiveId) {
       await updateNote.mutateAsync({ title, originalContent: content });
       return effectiveId;
     }
-    const created = await createNote.mutateAsync({ title, originalContent: content });
+    const created = await createNote.mutateAsync({
+      title: title.trim() || 'Untitled note',
+      originalContent: content,
+    });
     setCreatedId(created.id);
     return created.id;
   }
 
   function openSave() {
-    if (isEmpty) {
-      toast.show('Add a title or a few words first');
+    // A draft already exists once you've recorded, so allow saving recording-only notes.
+    if (isEmpty && !effectiveId && !railRef.current?.isRecording) {
+      toast.show('Add a title, a few words, or a recording first');
       return;
     }
     setModalOpen(true);
@@ -61,17 +68,25 @@ export function NoteEditor({ note }: { note?: Note }) {
 
   async function handleConfirm({ folderId, tagNames }: { folderId: string | null; tagNames: string[] }) {
     try {
-      if (effectiveId) {
+      let id = effectiveId;
+      // Save the note content first so processing sees the latest text...
+      if (id) {
         await updateNote.mutateAsync({ title, originalContent: content, folderId, tagNames });
-        toast.show('Note saved');
-        setModalOpen(false);
-        router.push(`/notes/${effectiveId}`);
       } else {
-        const created = await createNote.mutateAsync({ title, originalContent: content, folderId, tagNames });
-        toast.show('Note created');
-        setModalOpen(false);
-        router.replace(`/notes/${created.id}`);
+        const created = await createNote.mutateAsync({
+          title: title.trim() || 'Untitled note',
+          originalContent: content,
+          folderId,
+          tagNames,
+        });
+        setCreatedId(created.id);
+        id = created.id;
       }
+      // ...then flush an in-progress recording so Save captures both note and audio.
+      if (railRef.current?.isRecording) await railRef.current.finalize();
+      toast.show(note ? 'Note saved' : 'Note created');
+      setModalOpen(false);
+      router.push(`/notes/${id}`);
     } catch {
       toast.show('Could not save — try again');
     }
@@ -89,7 +104,7 @@ export function NoteEditor({ note }: { note?: Note }) {
         </button>
         <span className="grow" style={{ flex: 1 }} />
         <span className="meta">{effectiveId ? 'saved' : 'draft'}</span>
-        <Button size="sm" onClick={openSave} disabled={saving || isEmpty}>
+        <Button size="sm" onClick={openSave} loading={saving} disabled={isEmpty && !effectiveId}>
           {note ? 'Save' : 'Save note'}
         </Button>
       </header>
@@ -108,7 +123,7 @@ export function NoteEditor({ note }: { note?: Note }) {
           </div>
         </div>
         <div className="border-t md:border-t-0 md:border-l border-line">
-          <RecordingRail ensureNoteId={ensureNoteId} onSaved={(id) => router.push(`/notes/${id}`)} />
+          <RecordingRail ref={railRef} ensureNoteId={ensureNoteId} onSaved={(id) => router.push(`/notes/${id}`)} />
         </div>
       </div>
 
