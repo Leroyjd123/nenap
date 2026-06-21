@@ -48,6 +48,7 @@ export function RecordingRail({ ensureNoteId, onSaved }: RecordingRailProps) {
     } catch (e) {
       toast.show(e instanceof Error ? e.message : 'Upload failed');
       recorder.reset();
+      noteIdRef.current = null; // clear so a retry re-resolves the note id
     } finally {
       setUploading(false);
     }
@@ -95,6 +96,7 @@ export function RecordingRail({ ensureNoteId, onSaved }: RecordingRailProps) {
             ) : (
               <p style={{ color: 'var(--ink-3)' }}>Live transcript isn’t supported in this browser — the recording still saves and is transcribed after.</p>
             )}
+            {speech.error && <p style={{ color: 'var(--ink-3)', marginTop: 6 }}>{speech.error}</p>}
           </div>
         </>
       )}

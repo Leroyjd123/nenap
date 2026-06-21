@@ -104,14 +104,15 @@ export class NotesService {
 
   async remove(user: AuthUser, id: string): Promise<void> {
     await this.assertNoteOwned(user, id);
-    // Storage isn't cascade-linked to the DB, so remove the audio file first.
+    // Storage isn't cascade-linked to the DB, so remove the audio file first —
+    // before the row (and its storagePath) is gone. remove() is best-effort.
     const recording = await this.prisma.recording.findUnique({
       where: { noteId: id },
       select: { storagePath: true },
     });
+    if (recording) await this.storage.remove(recording.storagePath);
     // Cascades remove recording, transcript, enhanced versions, and jobs.
     await this.prisma.note.delete({ where: { id } });
-    if (recording) await this.storage.remove(recording.storagePath);
   }
 
   // --- helpers ---

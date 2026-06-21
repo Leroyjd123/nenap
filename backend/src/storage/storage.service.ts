@@ -69,8 +69,12 @@ export class StorageService {
     return error ? null : (data?.signedUrl ?? null);
   }
 
+  /** Best-effort delete — logs rather than throws so it never blocks a note deletion. */
   async remove(path: string): Promise<void> {
     if (!this.client) return;
-    await this.client.storage.from(this.bucket).remove([path]);
+    const { error } = await this.client.storage.from(this.bucket).remove([path]);
+    if (error) {
+      this.logger.warn(`Failed to delete storage object ${path}: ${error.message}`);
+    }
   }
 }

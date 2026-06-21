@@ -60,6 +60,11 @@ export default function HomePage() {
           <Link href="/login">
             <Button size="lg">Get started</Button>
           </Link>
+          <p className="meta mt-2">
+            <Link href="/privacy" className="text-accent-deep">Privacy</Link>
+            {' · '}
+            <Link href="/terms" className="text-accent-deep">Terms</Link>
+          </p>
         </div>
       </main>
     );

@@ -77,14 +77,14 @@ export class GeminiService {
   /** Uploaded files start in PROCESSING; poll until ACTIVE before referencing. */
   private async waitForActive(name: string | undefined, uri: string | undefined): Promise<string> {
     const ai = this.require();
-    if (!name || !uri) throw new Error('Gemini file upload returned no reference');
+    if (!name || !uri) throw new ServiceUnavailableException('Gemini file upload returned no reference');
     for (let i = 0; i < 30; i++) {
       const file = await ai.files.get({ name });
       if (file.state === 'ACTIVE') return file.uri ?? uri;
-      if (file.state === 'FAILED') throw new Error('Gemini failed to process the audio file');
+      if (file.state === 'FAILED') throw new ServiceUnavailableException('Gemini failed to process the audio file');
       await new Promise((r) => setTimeout(r, 1000));
     }
-    throw new Error('Timed out waiting for Gemini to process the audio');
+    throw new ServiceUnavailableException('Timed out waiting for Gemini to process the audio');
   }
 
   /** Models sometimes wrap HTML in ```html fences despite instructions. */

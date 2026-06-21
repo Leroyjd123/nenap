@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -197,6 +198,12 @@ export default function LoginPage() {
         >
           ↳ continue to demo account (dev only)
         </button>
+
+        <p className="meta" style={{ marginTop: 14 }}>
+          By continuing you agree to our{' '}
+          <Link href="/terms" style={{ color: 'var(--accent-deep)' }}>Terms</Link> and{' '}
+          <Link href="/privacy" style={{ color: 'var(--accent-deep)' }}>Privacy Policy</Link>.
+        </p>
       </div>
     </main>
   );

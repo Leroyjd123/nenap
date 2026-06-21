@@ -128,5 +128,18 @@ Branch `feat/phase-2-notes`. All green locally: typecheck ✓ · lint ✓ · 13 
 - Supabase free-tier limits (fine for MVP); Railway cold starts (acceptable now).
 - Gemini cost — mitigated by Flash + recording length + monthly caps.
 
+## Checkpoint — pre-Phase-5 review & refactor (2026-06-21)
+Founder tested the live app (Phases 1–4): "Overall it is fine with minor bugs" (deferred). Ran a full code-quality review (backend + frontend) and applied the correctness fixes worth doing now; deliberately deferred churny rewrites.
+
+**Applied:**
+- **Repo hygiene:** removed a stray tracked `*.xls` export from the root; added `*.xls`/`*.xlsx` to `.gitignore`.
+- **Backend:** `StorageService.remove()` now logs Supabase delete errors instead of silently swallowing them (best-effort, never blocks a note delete). `NotesService.remove()` deletes the audio object **before** the DB row (the prior order orphaned files; comment had claimed the new order). Plain `Error` → proper Nest exceptions in `GeminiService` (`ServiceUnavailableException`) and `ProcessingService.execute()` (`NotFoundException`) for cleaner status mapping/observability.
+- **Frontend:** `useNote` polling now stops after 5 min so a stuck `processing` note can't hammer the API forever (backend sweep flips it to failed). `SaveNoteModal` re-seeds its state on open (no stale folder/tags/title after a failed attempt). Recording rail clears `noteIdRef` on upload failure so a retry re-resolves the note. Web Speech errors are surfaced calmly in the rail instead of being swallowed. `CreateFolderModal` forwards the real error message.
+- **Docs/legal:** new in-brand `/privacy` and `/terms` pages (shared `LegalPage` component), linked from the login footer and the logged-out home screen. README refreshed (Supabase now provisioned; features list). *These legal docs are clear starting templates and should be reviewed by counsel before public launch (entity, jurisdiction, governing law).*
+
+**Verified:** typecheck ✓ · lint (0 warnings) ✓ · 24 unit tests ✓ · production build ✓ (11 routes; `/privacy` + `/terms` prerendered static).
+
+**Deferred (noted, not done — low value / churn risk now):** extracting a shared ownership-guard across NotesService/RecordingsService/FoldersService/ProcessingService; sweeping heavy inline styles in `note-view.tsx`/`recording-rail.tsx`/`login` into component CSS classes; humanizing API error copy by status code + 401→login redirect; modal focus-trap. Revisit during Phase 6 hardening. The dev-only demo-login button remains by design (founder uses it for testing; remove before prod).
+
 ## Decision rule for the future
 When a request conflicts with an approved decision here, **stop and confirm** rather than silently override. Update this log whenever a decision is made or changed.

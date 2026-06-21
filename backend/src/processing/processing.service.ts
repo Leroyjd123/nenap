@@ -105,7 +105,7 @@ export class ProcessingService {
       where: { id: noteId },
       include: { recording: true, transcript: true },
     });
-    if (!note) throw new Error('Note no longer exists');
+    if (!note) throw new NotFoundException('Note no longer exists');
 
     let transcriptText = note.transcript?.content ?? '';
 

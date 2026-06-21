@@ -10,7 +10,7 @@ interface SpeechRecognitionLike {
   start: () => void;
   stop: () => void;
   onresult: ((e: { resultIndex: number; results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
 }
 type SRCtor = new () => SpeechRecognitionLike;
 
@@ -29,10 +29,12 @@ export function useSpeechTranscript() {
   const supported = !!ctor;
   const [finalText, setFinalText] = useState('');
   const [interim, setInterim] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
 
   const start = useCallback(() => {
     if (!ctor) return;
+    setError(null);
     const rec = new ctor();
     rec.continuous = true;
     rec.interimResults = true;
@@ -46,7 +48,12 @@ export function useSpeechTranscript() {
       }
       setInterim(interimChunk);
     };
-    rec.onerror = () => {};
+    rec.onerror = (e) => {
+      // 'no-speech'/'aborted' are benign (silence, manual stop); only surface real faults.
+      if (e?.error && e.error !== 'no-speech' && e.error !== 'aborted') {
+        setError('Live transcript paused — the recording is still capturing audio.');
+      }
+    };
     try {
       rec.start();
       recRef.current = rec;
@@ -64,7 +71,8 @@ export function useSpeechTranscript() {
   const reset = useCallback(() => {
     setFinalText('');
     setInterim('');
+    setError(null);
   }, []);
 
-  return { supported, finalText, interim, start, stop, reset };
+  return { supported, finalText, interim, error, start, stop, reset };
 }

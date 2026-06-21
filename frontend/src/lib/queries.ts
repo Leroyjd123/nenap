@@ -46,13 +46,24 @@ export function useNotes(
   });
 }
 
+// Stop polling a "processing" note after this long so a stuck job can't hammer the
+// API forever — the backend stuck-job sweep will flip it to failed and we re-fetch then.
+const MAX_POLL_MS = 5 * 60 * 1000;
+
 export function useNote(id: string, opts?: { poll?: boolean }) {
   return useQuery({
     queryKey: qk.note(id),
     queryFn: () => apiFetch<Note>(`/notes/${id}`),
     enabled: !!id,
-    // While a note is processing, poll so the enhanced note appears when ready.
-    refetchInterval: (q) => (opts?.poll && q.state.data?.status === 'processing' ? 2500 : false),
+    // While a note is processing, poll so the enhanced note appears when ready —
+    // but give up after MAX_POLL_MS to avoid an endless refetch loop.
+    refetchInterval: (q) => {
+      const note = q.state.data;
+      if (!opts?.poll || note?.status !== 'processing') return false;
+      const since = note.updatedAt ? new Date(note.updatedAt).getTime() : 0;
+      if (since && Date.now() - since > MAX_POLL_MS) return false;
+      return 2500;
+    },
   });
 }
 

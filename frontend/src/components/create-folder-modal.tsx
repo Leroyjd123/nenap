@@ -20,8 +20,8 @@ export function CreateFolderModal({ open, onClose }: { open: boolean; onClose: (
       toast.show('Folder created');
       setName('');
       onClose();
-    } catch {
-      toast.show('Could not create folder');
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : 'Could not create folder');
     }
   }
 

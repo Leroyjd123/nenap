@@ -40,3 +40,7 @@ Thumbs.db
 # misc
 .vercel
 .sentryclirc
+
+# stray office/exports (don't belong in the repo)
+*.xls
+*.xlsx

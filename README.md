@@ -54,8 +54,17 @@ pnpm dev            # or: make dev
 
 Frontend → http://localhost:3000 · Backend → http://localhost:4000 · API docs → http://localhost:4000/docs
 
-> **Note:** Supabase is not yet provisioned. Auth and AI run against placeholder credentials until the
-> real Supabase project + keys are added. See [docs/CONTEXT.md](docs/CONTEXT.md).
+> **Status:** Supabase is provisioned (Auth · Postgres · Storage) and Gemini processing is verified
+> live. Phases 1–4 are complete; secrets live in `backend/.env` (gitignored). The login screen has a
+> dev-only demo button that is removed before production. See [docs/CONTEXT.md](docs/CONTEXT.md).
+
+## Features (Phases 1–4)
+
+- Email/password auth (Google sign-in UI present, dormant until OAuth is configured).
+- Notes, folders, and tags with a calm, editorial dashboard and Tiptap editor.
+- Optional in-browser audio recording with a live transcript, uploaded direct to private storage.
+- Gemini transcription + an enhanced note version that preserves your original words.
+- Static legal pages: `/privacy` and `/terms`.
 
 ## Documentation
 
