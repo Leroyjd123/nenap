@@ -77,4 +77,22 @@ export class StorageService {
       this.logger.warn(`Failed to delete storage object ${path}: ${error.message}`);
     }
   }
+
+  /** Best-effort bulk delete (e.g. when wiping an account). */
+  async removeMany(paths: string[], bucket = this.bucket): Promise<void> {
+    if (!this.client || paths.length === 0) return;
+    const { error } = await this.client.storage.from(bucket).remove(paths);
+    if (error) {
+      this.logger.warn(`Failed to bulk-delete ${paths.length} objects from ${bucket}: ${error.message}`);
+    }
+  }
+
+  /** Deletes the Supabase auth user (admin). Best-effort; logs on failure. */
+  async deleteAuthUser(userId: string): Promise<void> {
+    if (!this.client) return;
+    const { error } = await this.client.auth.admin.deleteUser(userId);
+    if (error) {
+      this.logger.warn(`Failed to delete auth user ${userId}: ${error.message}`);
+    }
+  }
 }

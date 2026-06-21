@@ -87,6 +87,9 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
             </button>
             {menuOpen && (
               <div className="absolute bottom-full left-0 right-0 mb-1 bg-surface border border-line-2 rounded-sm shadow-2 p-1">
+                <button className="nav-item" onClick={() => router.push('/account')}>
+                  <Icon name="home" size={16} /> Account
+                </button>
                 <button className="nav-item" onClick={logout}>Log out</button>
               </div>
             )}
@@ -107,7 +110,7 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
           <Brand className="text-[20px]" />
           <span className="grow" style={{ flex: 1 }} />
           <ThemeToggle />
-          <button onClick={logout} className="btn btn-ghost btn-sm">Log out</button>
+          <button onClick={() => router.push('/account')} className="btn btn-ghost btn-sm" aria-label="Account">Account</button>
         </div>
         <div className="grow scrollable" style={{ flex: 1, padding: '0 var(--pad) 90px' }}>
           {children}

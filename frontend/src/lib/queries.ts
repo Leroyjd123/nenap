@@ -7,6 +7,7 @@ import {
   type UseQueryOptions,
 } from '@tanstack/react-query';
 import type {
+  AccountStats,
   Attachment,
   CreateFolderInput,
   CreateNoteInput,
@@ -151,6 +152,22 @@ export function useSetPlan() {
       void qc.invalidateQueries({ queryKey: qk.entitlements() });
       void qc.invalidateQueries({ queryKey: ['notes'] });
     },
+  });
+}
+
+/** Lifetime usage counters for the account page. */
+export function useAccountStats() {
+  return useQuery({
+    queryKey: ['account-stats'],
+    queryFn: () => apiFetch<AccountStats>('/me/stats'),
+    staleTime: 30 * 1000,
+  });
+}
+
+/** Permanently delete the account and all its data. */
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: () => apiFetch<void>('/me', { method: 'DELETE' }),
   });
 }
 

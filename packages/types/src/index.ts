@@ -7,4 +7,5 @@ export * from './processing.js';
 export * from './attachment.js';
 export * from './note.js';
 export * from './billing.js';
+export * from './account.js';
 export * from './health.js';
