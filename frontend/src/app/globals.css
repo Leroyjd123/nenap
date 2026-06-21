@@ -48,6 +48,9 @@
 /* readable prose body — light by default, lightened in dark (see below) */
 :root { --prose-ink: #3c3a32; }
 
+/* toast pill — dark pill + white text in light mode; elevated dark + light text in dark */
+:root { --toast-bg: var(--ink); --toast-fg: #ffffff; }
+
 /* ---- Dark mode: a warm, low-contrast dark that keeps the editorial calm ----
    Most accents derive from --surface/--accent via color-mix, so overriding the
    base palette cascades. accent-deep is re-mixed lighter for legible links. */
@@ -67,6 +70,8 @@
 
   --accent-deep: color-mix(in oklab, var(--accent) 60%, #ffffff);
   --prose-ink: #d8d4c8;
+  --toast-bg: #38362e;
+  --toast-fg: #ece9e1;
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.28);
   --shadow-2: 0 10px 34px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -252,7 +257,7 @@ body {
 .opt-row.on .rad { border-color: var(--accent); border-width: 5px; }
 
 /* ===================== toast ===================== */
-.toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 13px; font-weight: 500; padding: 10px 16px; border-radius: 99px; box-shadow: var(--shadow-2); z-index: 40; display: flex; align-items: center; gap: 9px; animation: toast 0.3s both; white-space: nowrap; }
+.toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--toast-bg); color: var(--toast-fg); font-size: 13px; font-weight: 500; padding: 10px 16px; border-radius: 99px; box-shadow: var(--shadow-2); z-index: 40; display: flex; align-items: center; gap: 9px; animation: toast 0.3s both; white-space: nowrap; }
 .toast .t-dot { color: #a8c79c; display: flex; }
 @keyframes toast { from { opacity: 0; transform: translate(-50%, 12px); } }
 
