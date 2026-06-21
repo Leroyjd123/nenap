@@ -57,16 +57,43 @@ export function LandingPage() {
           className="lp-wrap lp-hero fade-up"
           style={{ background: 'radial-gradient(900px 460px at 50% -20%, var(--accent-tint), transparent 60%)' }}
         >
-          <span className="eyebrow">A calm knowledge-capture app</span>
-          <h1>A notebook that remembers alongside you.</h1>
-          <p className="lead">Focus on the moment. Nenap remembers the rest.</p>
-          <p className="lp-sub">
-            Write notes naturally. Optionally record alongside them. Nenap quietly hands back a cleaner
-            note — while always preserving your original words.
-          </p>
-          <div className="lp-cta">
-            <Link href="/login"><Button size="lg">Get started — it’s free</Button></Link>
-            <Link href="/login"><Button size="lg" variant="soft">Sign in</Button></Link>
+          <div className="lp-hero-grid">
+            <div className="lp-hero-copy">
+              <span className="eyebrow">A calm knowledge-capture app</span>
+              <h1>A notebook that remembers alongside you.</h1>
+              <p className="lead">Focus on the moment. Nenap remembers the rest.</p>
+              <p className="lp-sub">
+                Write notes naturally. Optionally record alongside them. Nenap quietly hands back a
+                cleaner note — while always preserving your original words.
+              </p>
+              <div className="lp-cta">
+                <Link href="/login"><Button size="lg">Get started — it’s free</Button></Link>
+                <Link href="/login"><Button size="lg" variant="soft">Sign in</Button></Link>
+              </div>
+            </div>
+
+            {/* On-brand product preview, built from the design system (no external assets). */}
+            <div className="lp-mock" aria-hidden="true">
+              <div className="lp-mock-bar">
+                <span className="lp-mock-tab">Enhanced</span>
+                <span className="meta">Original</span>
+                <span className="meta">Transcript</span>
+                <span className="grow" style={{ flex: 1 }} />
+                <span className="enh-orb" style={{ width: 24, height: 24 }}>
+                  <span className="ring" />
+                  <span className="core" style={{ inset: 5 }}><Icon name="spark" size={11} /></span>
+                </span>
+              </div>
+              <h4>Cell Cycle — Lecture 4</h4>
+              <div className="lp-mock-line" />
+              <div className="lp-mock-line" />
+              <div className="lp-mock-line short" />
+              <div className="lp-mock-foot">
+                <span className="rec-pill"><span className="live" /> 12:04</span>
+                <span className="tag">biology</span>
+                <span className="tag">exam</span>
+              </div>
+            </div>
           </div>
         </section>
 

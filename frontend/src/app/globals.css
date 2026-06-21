@@ -407,3 +407,20 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- Landing hero: editorial two-column + product preview mock ---- */
+.lp-hero-grid { display: grid; grid-template-columns: 1fr; gap: 36px; align-items: center; }
+@media (min-width: 900px) {
+  .lp-hero-grid { grid-template-columns: 1.05fr 0.95fr; }
+  .lp-hero-grid .lp-hero-copy { text-align: left; }
+  .lp-hero-grid .lp-hero-copy .lead, .lp-hero-grid .lp-hero-copy .lp-sub { margin-left: 0; }
+  .lp-hero-grid .lp-hero-copy .lp-cta { justify-content: flex-start; }
+}
+.lp-mock { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-2); padding: 20px; transform: rotate(-1deg); position: relative; }
+.lp-mock::after { content: ''; position: absolute; inset: 0; border-radius: var(--r); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 12%, transparent); pointer-events: none; }
+.lp-mock-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.lp-mock-tab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-deep); background: var(--accent-tint); border-radius: 6px; padding: 3px 8px; }
+.lp-mock h4 { font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 8px; letter-spacing: -0.01em; }
+.lp-mock-line { height: 9px; border-radius: 6px; background: color-mix(in oklab, var(--ink) 9%, transparent); margin: 7px 0; }
+.lp-mock-line.short { width: 60%; }
+.lp-mock-foot { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
