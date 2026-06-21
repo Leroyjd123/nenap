@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import type { JobType, ProcessingJob } from '@prisma/client';
+import type { JobType, Prisma, ProcessingJob } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { GeminiService } from '../gemini/gemini.service';
@@ -129,5 +129,46 @@ export class ProcessingService {
     await this.prisma.enhancedNoteVersion.create({
       data: { noteId, version: (last?.version ?? 0) + 1, content: enhanced },
     });
+
+    // Opt-in: let the AI suggest a folder + tags. Best-effort, never fails the job.
+    if (note.autoOrganise) {
+      await this.autoOrganise(note.id, note.userId, note.folderId, note.originalContent, transcriptText, enhanced);
+    }
+  }
+
+  /** Applies AI-suggested folder (only if none set) and merges suggested tags. */
+  private async autoOrganise(
+    noteId: string,
+    userId: string,
+    currentFolderId: string | null,
+    original: string,
+    transcript: string,
+    enhanced: string,
+  ): Promise<void> {
+    try {
+      const { folder, tags } = await this.gemini.organise(original, transcript, enhanced);
+      const data: Prisma.NoteUpdateInput = {};
+      if (folder && !currentFolderId) {
+        data.folder = {
+          connectOrCreate: {
+            where: { userId_name: { userId, name: folder } },
+            create: { userId, name: folder },
+          },
+        };
+      }
+      if (tags.length) {
+        data.tags = {
+          connectOrCreate: tags.map((name) => ({
+            where: { userId_name: { userId, name } },
+            create: { userId, name },
+          })),
+        };
+      }
+      if (Object.keys(data).length) {
+        await this.prisma.note.update({ where: { id: noteId }, data });
+      }
+    } catch (e) {
+      this.logger.warn(`auto-organise failed for note ${noteId}: ${(e as Error).message}`);
+    }
   }
 }

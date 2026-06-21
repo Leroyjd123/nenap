@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icon } from '@/components/ui/icon';
@@ -111,8 +112,8 @@ export default function LoginPage() {
     return (
       <main className="screen min-h-screen grid place-items-center px-7 py-10" style={GRADIENT_BG}>
         <div className="col center text-center" style={{ maxWidth: 320, margin: '0 auto' }}>
-          <div className="brand" style={{ fontSize: 38, marginBottom: 14 }}>
-            Nenap<span className="dot">.</span>
+          <div style={{ marginBottom: 14 }}>
+            <Brand className="text-[38px]" />
           </div>
           <div className="enh-orb" style={{ width: 56, height: 56, marginBottom: 18 }}>
             <div className="ring" />
@@ -152,8 +153,8 @@ export default function LoginPage() {
   return (
     <main className="screen min-h-screen grid place-items-center px-7 py-10" style={GRADIENT_BG}>
       <div className="col center" style={{ gap: 15, width: '100%', maxWidth: 320, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div className="brand" style={{ fontSize: 38, marginBottom: 2 }}>
-          Nenap<span className="dot">.</span>
+        <div style={{ marginBottom: 2 }}>
+          <Brand className="text-[38px]" />
         </div>
         <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--ink-2)', fontSize: 17, margin: '0 0 14px' }}>
           stay present, keep what matters

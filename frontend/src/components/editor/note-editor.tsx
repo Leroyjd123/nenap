@@ -68,27 +68,35 @@ export function NoteEditor({ note }: { note?: Note }) {
     setModalOpen(true);
   }
 
-  async function handleConfirm({ folderId, tagNames }: { folderId: string | null; tagNames: string[] }) {
+  async function handleConfirm({ folderId, tagNames, autoOrganise }: { folderId: string | null; tagNames: string[]; autoOrganise?: boolean }) {
+    const wasRecording = railRef.current?.isRecording ?? false;
     try {
       let id = effectiveId;
       // Save the note content first so processing sees the latest text...
       if (id) {
-        await updateNote.mutateAsync({ title, originalContent: content, folderId, tagNames });
+        await updateNote.mutateAsync({ title, originalContent: content, folderId, tagNames, autoOrganise });
       } else {
         const created = await createNote.mutateAsync({
           title: title.trim() || 'Untitled note',
           originalContent: content,
           folderId,
           tagNames,
+          autoOrganise,
         });
         setCreatedId(created.id);
         id = created.id;
       }
       // ...then flush an in-progress recording so Save captures both note and audio.
-      if (railRef.current?.isRecording) await railRef.current.finalize();
-      toast.show(note ? 'Note saved' : 'Note created');
+      if (wasRecording) await railRef.current?.finalize();
       setModalOpen(false);
-      router.push(`/notes/${id}`);
+      if (wasRecording) {
+        // Async: processing runs in the background — don't block on it.
+        toast.show('Saved — improving your note in the background');
+        router.push('/');
+      } else {
+        toast.show(note ? 'Note saved' : 'Note created');
+        router.push(`/notes/${id}`);
+      }
     } catch {
       toast.show('Could not save — try again');
     }
@@ -135,6 +143,7 @@ export function NoteEditor({ note }: { note?: Note }) {
         folders={folders.data ?? []}
         initialFolderId={note?.folderId ?? null}
         initialTags={note?.tags.map((t) => t.name) ?? []}
+        showAutoOrganise
         saving={saving}
         onConfirm={handleConfirm}
       />

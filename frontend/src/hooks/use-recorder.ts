@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 
-export type RecorderState = 'idle' | 'recording' | 'stopped';
+export type RecorderState = 'idle' | 'recording' | 'paused' | 'stopped';
 
 function pickMime(): string {
   if (typeof MediaRecorder === 'undefined') return 'audio/webm';
@@ -58,6 +58,27 @@ export function useRecorder() {
     }
   }, [cleanup]);
 
+  /** Pause an active recording (timer halts; audio resumes seamlessly on resume). */
+  const pause = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (recorder?.state === 'recording') {
+      recorder.pause();
+      if (timerRef.current) window.clearInterval(timerRef.current);
+      timerRef.current = null;
+      setState('paused');
+    }
+  }, []);
+
+  /** Resume a paused recording. */
+  const resume = useCallback(() => {
+    const recorder = recorderRef.current;
+    if (recorder?.state === 'paused') {
+      recorder.resume();
+      timerRef.current = window.setInterval(() => setElapsed((s) => s + 1), 1000);
+      setState('recording');
+    }
+  }, []);
+
   /** Stops recording and resolves the finished audio blob. */
   const stop = useCallback((): Promise<Blob> => {
     return new Promise((resolve) => {
@@ -85,5 +106,5 @@ export function useRecorder() {
     setError(null);
   }, [cleanup]);
 
-  return { state, elapsed, error, mimeType: mimeRef.current, start, stop, reset };
+  return { state, elapsed, error, mimeType: mimeRef.current, start, stop, pause, resume, reset };
 }

@@ -69,6 +69,37 @@ export class GeminiService {
     return this.stripFences((res.text ?? '').trim());
   }
 
+  /**
+   * Suggests a single folder name and a few tags for a note. Best-effort — returns
+   * empty suggestions if the model misbehaves (the caller treats it as optional).
+   */
+  async organise(original: string, transcript: string, enhanced: string): Promise<{ folder: string | null; tags: string[] }> {
+    const ai = this.require();
+    const prompt = [
+      'You categorise a personal note. Return ONLY minified JSON, no prose, no code fences.',
+      'Shape: {"folder": string, "tags": string[]}',
+      '- "folder": ONE short, general category (1-3 words, Title Case), e.g. "Work", "College", "Ideas", "Health".',
+      '- "tags": 2-5 short lowercase keywords describing the content. No "#". No duplicates.',
+      'Base it on the note below. Be concise and faithful — do not invent unrelated topics.',
+      '',
+      `NOTE:\n${enhanced || original || transcript || '(empty)'}`,
+    ].join('\n');
+
+    const res = await ai.models.generateContent({ model: this.model, contents: prompt });
+    const raw = this.stripFences((res.text ?? '').trim());
+    try {
+      const parsed = JSON.parse(raw) as { folder?: unknown; tags?: unknown };
+      const folder = typeof parsed.folder === 'string' && parsed.folder.trim() ? parsed.folder.trim().slice(0, 60) : null;
+      const tags = Array.isArray(parsed.tags)
+        ? [...new Set(parsed.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim().toLowerCase()).filter(Boolean))].slice(0, 5)
+        : [];
+      return { folder, tags };
+    } catch {
+      this.logger.warn('organise(): could not parse Gemini JSON; skipping suggestions');
+      return { folder: null, tags: [] };
+    }
+  }
+
   private require(): GoogleGenAI {
     if (!this.client) throw new ServiceUnavailableException('Gemini is not configured');
     return this.client;

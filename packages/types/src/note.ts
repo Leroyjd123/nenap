@@ -34,6 +34,8 @@ export const CreateNoteInput = z.object({
   originalContent: z.string().default(''),
   folderId: Uuid.nullable().optional(),
   tagNames: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
+  /** Opt in to AI-suggested folder + tags during processing. */
+  autoOrganise: z.boolean().optional(),
 });
 export type CreateNoteInput = z.infer<typeof CreateNoteInput>;
 
@@ -43,6 +45,7 @@ export const UpdateNoteInput = z.object({
   originalContent: z.string().optional(),
   folderId: Uuid.nullable().optional(),
   tagNames: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
+  autoOrganise: z.boolean().optional(),
 });
 export type UpdateNoteInput = z.infer<typeof UpdateNoteInput>;
 

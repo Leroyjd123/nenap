@@ -81,6 +81,7 @@ export class NotesService {
         title: input.title ?? '',
         originalContent: input.originalContent ?? '',
         folderId: input.folderId ?? null,
+        autoOrganise: input.autoOrganise ?? false,
         tags: input.tagNames?.length ? this.connectOrCreateTags(user, input.tagNames) : undefined,
       },
       include: DETAIL_INCLUDE,
@@ -95,6 +96,7 @@ export class NotesService {
     const data: Prisma.NoteUpdateInput = {};
     if (input.title !== undefined) data.title = input.title;
     if (input.originalContent !== undefined) data.originalContent = input.originalContent;
+    if (input.autoOrganise !== undefined) data.autoOrganise = input.autoOrganise;
     if (input.folderId !== undefined) {
       data.folder = input.folderId ? { connect: { id: input.folderId } } : { disconnect: true };
     }

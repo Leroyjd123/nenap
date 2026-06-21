@@ -35,7 +35,11 @@ export function Dashboard({ email }: { email?: string }) {
   );
 
   const folders = useFolders();
-  const notes = useNotes(query);
+  // Poll while anything is processing so cards flip from "Improving…" to ready on their own.
+  const notes = useNotes(query, {
+    refetchInterval: (q) =>
+      (q.state.data ?? []).some((n) => n.status === 'processing') ? 3000 : false,
+  });
   const activeFolder = folders.data?.find((f) => f.id === folderId);
 
   const topBar = (

@@ -32,7 +32,8 @@ export const RecordingRail = forwardRef<RecordingRailHandle, RecordingRailProps>
     const [uploading, setUploading] = useState(false);
     const noteIdRef = useRef<string | null>(null);
 
-    const recording = recorder.state === 'recording';
+    const paused = recorder.state === 'paused';
+    const recording = recorder.state === 'recording' || paused;
 
     async function handleStart() {
       const id = await ensureNoteId();
@@ -108,10 +109,22 @@ export const RecordingRail = forwardRef<RecordingRailHandle, RecordingRailProps>
         {recording && (
           <>
             <div className="row between" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span className="rec-pill"><span className="live" /> {fmtDuration(recorder.elapsed)}</span>
-              <button className="btn btn-soft btn-sm" onClick={() => doStop(true)}><Icon name="stop" size={15} /> Stop</button>
+              <span className="rec-pill">
+                <span className="live" style={paused ? { animation: 'none', opacity: 0.5 } : undefined} />
+                {paused ? 'Paused' : fmtDuration(recorder.elapsed)}
+              </span>
+              <div className="row" style={{ display: 'flex', gap: 6 }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => (paused ? recorder.resume() : recorder.pause())}
+                  aria-label={paused ? 'Resume recording' : 'Pause recording'}
+                >
+                  <Icon name={paused ? 'play' : 'stop'} size={15} /> {paused ? 'Resume' : 'Pause'}
+                </button>
+                <button className="btn btn-soft btn-sm" onClick={() => doStop(true)}><Icon name="check" size={15} /> Save</button>
+              </div>
             </div>
-            <WaveBars live n={26} h={42} />
+            <WaveBars live={!paused} n={26} h={42} />
             <span className="eyebrow">Live transcript</span>
             <div className="prose-nenap font-mono grow scrollable" style={{ flex: 1, overflowY: 'auto', fontSize: 13, color: 'var(--ink-2)' }}>
               {speech.supported ? (

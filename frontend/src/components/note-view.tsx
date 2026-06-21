@@ -10,7 +10,6 @@ import { Icon } from '@/components/ui/icon';
 import { Segmented } from '@/components/ui/segmented';
 import { Tag } from '@/components/ui/tag';
 import { useToast } from '@/components/ui/toast';
-import { EnhancingOverlay } from '@/components/enhancing-overlay';
 import { SaveNoteModal } from '@/components/editor/save-note-modal';
 import {
   useDeleteNote,
@@ -79,8 +78,6 @@ export function NoteView({ note: initial }: { note: Note }) {
 
   return (
     <div className="screen col" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
-      {processing && <EnhancingOverlay />}
-
       <header className="d-top">
         <button onClick={() => router.push('/')} className="btn btn-ghost btn-sm" type="button">
           <Icon name="back" size={17} /> Notes
@@ -112,6 +109,18 @@ export function NoteView({ note: initial }: { note: Note }) {
               <span className="nc-rec"><Icon name="wave" size={13} /> {fmtDuration(note.recording.durationSec)}</span>
             )}
           </div>
+
+          {processing && (
+            <div style={{ marginTop: 16, background: 'var(--accent-tint)', border: '1px solid var(--accent-line)', borderRadius: 'var(--r-sm)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="enh-orb" style={{ width: 26, height: 26, flex: 'none' }}>
+                <span className="ring" />
+                <span className="core" style={{ inset: 6 }}><Icon name="spark" size={12} /></span>
+              </span>
+              <span style={{ color: 'var(--accent-deep)', fontSize: 13.5, flex: 1 }}>
+                Improving your note in the background — the enhanced version appears here when it’s ready. You can keep working.
+              </span>
+            </div>
+          )}
 
           {failed && (
             <div style={{ marginTop: 16, background: 'var(--rec-tint)', border: '1px solid var(--rec-line)', borderRadius: 'var(--r-sm)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>

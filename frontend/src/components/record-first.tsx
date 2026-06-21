@@ -14,7 +14,7 @@ import { useCreateNote, useFolders } from '@/lib/queries';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 import { fmtDuration, uploadRecording } from '@/lib/recordings';
 
-/** Record-first capture (from the dashboard): record now, name it on save. */
+/** Record-first capture (from the dashboard): record now, name it on save, repeat. */
 export function RecordFirst() {
   useDocumentTitle('Record — Nenap');
   const router = useRouter();
@@ -26,8 +26,12 @@ export function RecordFirst() {
 
   const [saveOpen, setSaveOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
   const blobRef = useRef<Blob | null>(null);
   const durationRef = useRef(0);
+
+  const paused = recorder.state === 'paused';
+  const active = recorder.state === 'recording' || paused;
 
   async function start() {
     const ok = await recorder.start();
@@ -41,7 +45,12 @@ export function RecordFirst() {
     setSaveOpen(true);
   }
 
-  async function handleSave({ title, folderId, tagNames }: { title?: string; folderId: string | null; tagNames: string[] }) {
+  async function handleSave({ title, folderId, tagNames, autoOrganise }: {
+    title?: string;
+    folderId: string | null;
+    tagNames: string[];
+    autoOrganise?: boolean;
+  }) {
     if (!blobRef.current) return;
     setSaving(true);
     try {
@@ -50,17 +59,24 @@ export function RecordFirst() {
         originalContent: speech.finalText ? `<p>${speech.finalText}</p>` : '',
         folderId,
         tagNames,
+        autoOrganise,
       });
       await uploadRecording(note.id, blobRef.current, recorder.mimeType, durationRef.current);
-      toast.show('Recording saved — improving soon');
-      router.replace(`/notes/${note.id}`);
+      // Async: don't block on processing — let them keep capturing.
+      toast.show('Saved — improving your note in the background');
+      setSaveOpen(false);
+      setSessionCount((c) => c + 1);
+      // Reset for the next recording in this session.
+      blobRef.current = null;
+      durationRef.current = 0;
+      speech.reset();
+      recorder.reset();
     } catch (e) {
       toast.show(e instanceof Error ? e.message : 'Could not save recording');
+    } finally {
       setSaving(false);
     }
   }
-
-  const recording = recorder.state === 'recording';
 
   return (
     <main
@@ -69,28 +85,37 @@ export function RecordFirst() {
     >
       <header className="row between" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px var(--pad)' }}>
         <button className="btn btn-ghost btn-sm" onClick={() => router.push('/')}>
-          <Icon name="x" size={17} /> Close
+          <Icon name="x" size={17} /> {sessionCount > 0 ? 'Done' : 'Close'}
         </button>
         <Brand className="text-[18px]" />
-        {recording ? <span className="rec-pill"><span className="live" /> {fmtDuration(recorder.elapsed)}</span> : <span style={{ width: 60 }} />}
+        {active ? (
+          <span className="rec-pill">
+            <span className="live" style={paused ? { animation: 'none', opacity: 0.5 } : undefined} />
+            {paused ? 'Paused' : fmtDuration(recorder.elapsed)}
+          </span>
+        ) : (
+          <span style={{ width: 60, textAlign: 'right' }}>
+            {sessionCount > 0 && <span className="meta">{sessionCount} saved</span>}
+          </span>
+        )}
       </header>
 
       <div className="flex-1 w-full max-w-[560px] mx-auto px-[var(--pad)] flex flex-col justify-center">
-        {!recording && recorder.state === 'idle' && (
+        {!active && recorder.state !== 'stopped' && (
           <div className="col center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
             <button className="btn btn-rec" style={{ width: 84, height: 84, borderRadius: 99, padding: 0, borderWidth: 2 }} onClick={start} aria-label="Start recording">
               <Icon name="mic" size={32} />
             </button>
             <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', color: 'var(--ink-2)', fontSize: 16 }}>
-              Capture first, name it later.
+              {sessionCount > 0 ? 'Record another, or tap Done.' : 'Capture first, name it later.'}
             </p>
             {recorder.error && <p style={{ color: 'var(--rec)', fontSize: 13 }}>{recorder.error}</p>}
           </div>
         )}
 
-        {recording && (
+        {active && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r)', padding: 24, boxShadow: 'var(--shadow-1)' }}>
-            <WaveBars live n={48} h={64} seed={3} />
+            <WaveBars live={!paused} n={48} h={64} seed={3} />
             <hr className="hr" style={{ margin: '18px 0' }} />
             <span className="eyebrow">Live transcript</span>
             <div className="prose-nenap font-mono" style={{ marginTop: 10, fontSize: 14, color: 'var(--ink-2)' }}>
@@ -99,17 +124,29 @@ export function RecordFirst() {
               ) : (
                 <p style={{ color: 'var(--ink-3)' }}>Live transcript isn’t supported here — the audio still saves and is transcribed after.</p>
               )}
+              {speech.error && <p style={{ color: 'var(--ink-3)', marginTop: 6 }}>{speech.error}</p>}
             </div>
           </div>
         )}
       </div>
 
-      {recording && (
+      {active && (
         <div className="col center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 11, padding: '16px 0 28px' }}>
-          <button className="btn btn-rec" style={{ width: 70, height: 70, borderRadius: 99, padding: 0, borderWidth: 2 }} onClick={stop} aria-label="Stop and save">
-            <Icon name="stop" size={26} />
-          </button>
-          <span className="meta">tap to stop &amp; save</span>
+          <div className="row center" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button
+              className="btn btn-soft btn-icon"
+              style={{ width: 52, height: 52, borderRadius: 99 }}
+              onClick={() => (paused ? recorder.resume() : recorder.pause())}
+              aria-label={paused ? 'Resume recording' : 'Pause recording'}
+            >
+              <Icon name={paused ? 'play' : 'stop'} size={20} />
+            </button>
+            <button className="btn btn-rec" style={{ width: 70, height: 70, borderRadius: 99, padding: 0, borderWidth: 2 }} onClick={stop} aria-label="Stop and save">
+              <Icon name="check" size={26} />
+            </button>
+            <span style={{ width: 52 }} />
+          </div>
+          <span className="meta">{paused ? 'paused — resume or save' : 'pause, or save & name'}</span>
         </div>
       )}
 
@@ -118,6 +155,7 @@ export function RecordFirst() {
         onClose={() => !saving && setSaveOpen(false)}
         folders={folders.data ?? []}
         askTitle
+        showAutoOrganise
         title="Save recording"
         subtitle="Give it a title — a clean note generates in the background."
         saving={saving}
