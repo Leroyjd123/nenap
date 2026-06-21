@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { Folder } from '@nenap/types';
 import { CreateFolderModal } from '@/components/create-folder-modal';
+import { Brand } from '@/components/brand';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
@@ -35,8 +37,8 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
       {/* ===== Desktop ===== */}
       <div className="d-shell hidden md:grid">
         <aside className="d-side">
-          <div className="brand" style={{ fontSize: 23, padding: '4px 8px 16px', cursor: 'pointer' }} onClick={() => onSelectFolder(undefined)}>
-            Nenap<span className="dot">.</span>
+          <div style={{ padding: '4px 8px 16px', cursor: 'pointer' }} onClick={() => onSelectFolder(undefined)}>
+            <Brand className="text-[23px]" />
           </div>
           <div className="side-lab">Folders</div>
           <button className={cn('nav-item', !activeFolderId && 'on')} onClick={() => onSelectFolder(undefined)}>
@@ -59,6 +61,13 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
           </button>
 
           <div className="grow" style={{ flex: 1 }} />
+          <div className="row" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button className="nav-item" style={{ flex: 1 }} onClick={() => router.push('/help')}>
+              <Icon name="doc" size={17} />
+              <span className="grow" style={{ flex: 1 }}>Help &amp; policies</span>
+            </button>
+            <ThemeToggle />
+          </div>
           <hr className="hr" style={{ margin: '8px 4px' }} />
           <div className="relative">
             <button
@@ -91,7 +100,9 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
       {/* ===== Mobile ===== */}
       <div className="md:hidden flex flex-col min-h-screen">
         <div className="m-top">
-          <div className="brand">Nenap<span className="dot">.</span></div>
+          <Brand className="text-[20px]" />
+          <span className="grow" style={{ flex: 1 }} />
+          <ThemeToggle />
           <button onClick={logout} className="btn btn-ghost btn-sm">Log out</button>
         </div>
         <div className="grow scrollable" style={{ flex: 1, padding: '0 var(--pad) 90px' }}>
@@ -108,6 +119,7 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
         <nav className="m-tabbar">
           <div className="m-tab on"><Icon name="home" size={21} /> Home</div>
           <div className="m-tab" onClick={() => setFolderModal(true)}><Icon name="folder" size={21} /> Folders</div>
+          <div className="m-tab" onClick={() => router.push('/help')}><Icon name="doc" size={21} /> Help</div>
         </nav>
       </div>
 

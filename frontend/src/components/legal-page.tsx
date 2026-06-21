@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Brand } from '@/components/brand';
 import { Footer } from '@/components/footer';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Icon } from '@/components/ui/icon';
 
 /**
@@ -34,7 +35,10 @@ export function LegalPage({
         <Link href="/" aria-label="Nenap home">
           <Brand className="text-[20px]" />
         </Link>
-        <Link href="/login" className="btn btn-ghost btn-sm">Sign in</Link>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <ThemeToggle />
+          <Link href="/login" className="btn btn-ghost btn-sm">Sign in</Link>
+        </div>
       </header>
 
       <article

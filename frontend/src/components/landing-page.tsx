@@ -5,6 +5,7 @@ import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
 import { Icon } from '@/components/ui/icon';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 
 const FEATURES = [
@@ -43,7 +44,8 @@ export function LandingPage() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header className="lp-nav">
         <Brand className="text-[22px]" />
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <ThemeToggle />
           <Link href="/login" className="btn btn-ghost btn-sm">Sign in</Link>
           <Link href="/login" className="btn btn-primary btn-sm">Get started</Link>
         </div>

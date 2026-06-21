@@ -24,7 +24,8 @@ export function Footer() {
             <Link href="/terms" className="footer-link">Terms of Service</Link>
           </div>
           <div className="footer-col">
-            <span className="eyebrow">Contact</span>
+            <span className="eyebrow">Support</span>
+            <Link href="/help" className="footer-link">Help Center</Link>
             <a href="mailto:hello@nenap.app" className="footer-link">hello@nenap.app</a>
           </div>
         </nav>

@@ -45,6 +45,35 @@
 :root[data-density='compact'] { --sp: 5px; --fs: 14px; --pad: 13px; }
 :root[data-density='roomy']   { --sp: 10px; --fs: 16px; --pad: 24px; }
 
+/* readable prose body — light by default, lightened in dark (see below) */
+:root { --prose-ink: #3c3a32; }
+
+/* ---- Dark mode: a warm, low-contrast dark that keeps the editorial calm ----
+   Most accents derive from --surface/--accent via color-mix, so overriding the
+   base palette cascades. accent-deep is re-mixed lighter for legible links. */
+:root[data-theme='dark'] {
+  --bg: #1b1a17;
+  --surface: #24231f;
+  --surface-2: #2c2b25;
+  --surface-3: #34322b;
+  --ink: #ece9e1;
+  --ink-2: #b1ab9d;
+  --ink-3: #837d70;
+  --line: rgba(236, 233, 225, 0.12);
+  --line-2: rgba(236, 233, 225, 0.2);
+
+  --accent: #8a9a6b; /* slightly brighter sage for dark surfaces */
+  --rec: #c08068;
+
+  --accent-deep: color-mix(in oklab, var(--accent) 60%, #ffffff);
+  --prose-ink: #d8d4c8;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 10px 34px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
+
+  color-scheme: dark;
+}
+
 /* Expose tokens to Tailwind utilities: bg-surface, text-ink-2, font-display, rounded-r, … */
 @theme inline {
   --color-bg: var(--bg);
@@ -272,10 +301,10 @@ body {
 .prose-nenap h1:first-child,
 .prose-nenap h2:first-child,
 .prose-nenap h3:first-child { margin-top: 0; }
-.prose-nenap p { margin: 0 0 10px; color: #3c3a32; }
+.prose-nenap p { margin: 0 0 10px; color: var(--prose-ink); }
 .prose-nenap ul,
 .prose-nenap ol { margin: 0 0 10px; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
-.prose-nenap li { color: #3c3a32; }
+.prose-nenap li { color: var(--prose-ink); }
 .prose-nenap strong { font-weight: 600; }
 .prose-nenap.is-editor-empty:first-child::before,
 .prose-nenap p.is-editor-empty:first-child::before {
