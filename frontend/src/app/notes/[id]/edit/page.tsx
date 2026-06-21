@@ -1,23 +1,16 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { AuthGuard } from '@/components/auth-guard';
 import { NoteEditor } from '@/components/editor/note-editor';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useNote } from '@/lib/queries';
-import { useSession } from '@/hooks/use-session';
 
-export default function EditNotePage() {
-  const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const { session, loading } = useSession();
-  const note = useNote(params.id);
+function EditNote({ id }: { id: string }) {
+  const note = useNote(id);
 
-  if (loading || note.isLoading) {
+  if (note.isLoading) {
     return <main className="min-h-screen grid place-items-center eyebrow animate-pulse">Loading…</main>;
-  }
-  if (!session) {
-    router.replace('/login');
-    return null;
   }
   if (note.isError || !note.data) {
     return (
@@ -27,4 +20,13 @@ export default function EditNotePage() {
     );
   }
   return <NoteEditor note={note.data} />;
+}
+
+export default function EditNotePage() {
+  const params = useParams<{ id: string }>();
+  return (
+    <AuthGuard>
+      <EditNote id={params.id} />
+    </AuthGuard>
+  );
 }
