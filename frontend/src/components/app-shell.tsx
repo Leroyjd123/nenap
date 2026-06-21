@@ -61,6 +61,10 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
           </button>
 
           <div className="grow" style={{ flex: 1 }} />
+          <button className="nav-item" onClick={() => router.push('/plans')}>
+            <Icon name="spark" size={17} />
+            <span className="grow" style={{ flex: 1 }}>Plans &amp; boosters</span>
+          </button>
           <div className="row" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <button className="nav-item" style={{ flex: 1 }} onClick={() => router.push('/help')}>
               <Icon name="doc" size={17} />

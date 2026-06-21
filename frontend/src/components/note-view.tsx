@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/toast';
 import { SaveNoteModal } from '@/components/editor/save-note-modal';
 import {
   useDeleteNote,
+  useEntitlements,
   useFolders,
   useImproveNote,
   useNote,
@@ -40,6 +41,8 @@ export function NoteView({ note: initial }: { note: Note }) {
   const deleteNote = useDeleteNote();
   const improve = useImproveNote(note.id);
   const playback = useRecordingUrl(note.id, note.hasRecording);
+  const ent = useEntitlements();
+  const canImproveAgain = ent.data?.limits.improveAgain ?? true;
 
   const latestEnhanced = note.enhancedVersions[0]?.content ?? null;
   const [tab, setTab] = useState<TabKey>(
@@ -140,9 +143,15 @@ export function NoteView({ note: initial }: { note: Note }) {
               ]}
             />
             {tab === 'enhanced' && latestEnhanced && (
-              <Button size="sm" onClick={handleImprove} loading={improve.isPending} disabled={processing}>
-                <Icon name="spark" size={16} /> Improve again
-              </Button>
+              canImproveAgain ? (
+                <Button size="sm" onClick={handleImprove} loading={improve.isPending} disabled={processing}>
+                  <Icon name="spark" size={16} /> Improve again
+                </Button>
+              ) : (
+                <Button size="sm" variant="soft" onClick={() => router.push('/plans')} title="Improve again is available on Basic and Pro">
+                  <Icon name="spark" size={16} /> Improve again (Pro)
+                </Button>
+              )
             )}
           </div>
 

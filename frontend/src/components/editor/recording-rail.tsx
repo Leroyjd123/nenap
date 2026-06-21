@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
@@ -8,6 +9,7 @@ import { useToast } from '@/components/ui/toast';
 import { useRecorder } from '@/hooks/use-recorder';
 import { useSpeechTranscript } from '@/hooks/use-speech-transcript';
 import { fmtDuration, uploadRecording } from '@/lib/recordings';
+import { ApiError } from '@/lib/api';
 
 interface RecordingRailProps {
   /** Resolves the note id, creating a draft first if this is a new note. */
@@ -26,6 +28,7 @@ export interface RecordingRailHandle {
 /** The Hi-Fi recording rail: capture the room while you keep typing (clay = recording). */
 export const RecordingRail = forwardRef<RecordingRailHandle, RecordingRailProps>(
   function RecordingRail({ ensureNoteId, onSaved }, ref) {
+    const router = useRouter();
     const toast = useToast();
     const recorder = useRecorder();
     const speech = useSpeechTranscript();
@@ -58,7 +61,12 @@ export const RecordingRail = forwardRef<RecordingRailHandle, RecordingRailProps>
         toast.show('Recording saved — improving soon');
         if (navigate) onSaved(noteId);
       } catch (e) {
-        toast.show(e instanceof Error ? e.message : 'Upload failed');
+        if (e instanceof ApiError && e.status === 402) {
+          toast.show(e.message);
+          router.push('/plans');
+        } else {
+          toast.show(e instanceof Error ? e.message : 'Upload failed');
+        }
         recorder.reset();
         noteIdRef.current = null; // clear so a retry re-resolves the note id
       } finally {

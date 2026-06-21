@@ -1,9 +1,10 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import type { JobType, Prisma, ProcessingJob } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { GeminiService } from '../gemini/gemini.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import type { AuthUser } from '../auth/auth-user';
 
 const STUCK_AFTER_MS = 3 * 60 * 1000; // re-queue jobs stuck 'processing' this long
@@ -17,6 +18,7 @@ export class ProcessingService {
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly gemini: GeminiService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   /** Fire-and-forget kick after a recording is saved or "Improve again" is tapped. */
@@ -28,9 +30,22 @@ export class ProcessingService {
 
   /** "Improve again" — queue an enhance-only job and run it now. */
   async improve(user: AuthUser, noteId: string): Promise<void> {
-    const note = await this.prisma.note.findUnique({ where: { id: noteId }, select: { userId: true } });
+    const note = await this.prisma.note.findUnique({
+      where: { id: noteId },
+      select: { userId: true, _count: { select: { enhancedVersions: true } } },
+    });
     if (!note) throw new NotFoundException('Note not found');
     if (note.userId !== user.id) throw new ForbiddenException();
+
+    // Re-running on a note that already has an enhanced version is "Improve again"
+    // (a paid feature). The first enhancement / retrying a failed one stays free.
+    const isRegen = note._count.enhancedVersions > 0;
+    if (isRegen && !(await this.entitlements.canImproveAgain(user.id))) {
+      throw new HttpException(
+        { message: '“Improve again” is available on Basic and Pro. Upgrade or grab a booster.', code: 'IMPROVE_LIMIT' },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
 
     await this.prisma.note.update({ where: { id: noteId }, data: { status: 'processing' } });
     await this.prisma.processingJob.create({ data: { noteId, type: 'enhance', status: 'queued' } });

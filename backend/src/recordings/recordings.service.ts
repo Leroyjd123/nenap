@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CompleteRecordingInput,
   Recording,
@@ -8,6 +8,7 @@ import type {
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { ProcessingService } from '../processing/processing.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { toRecording } from '../common/mappers';
 import type { AuthUser } from '../auth/auth-user';
 
@@ -25,6 +26,7 @@ export class RecordingsService {
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly processing: ProcessingService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -39,6 +41,14 @@ export class RecordingsService {
     const path = `${user.id}/${noteId}.${ext}`;
 
     const existing = await this.prisma.recording.findUnique({ where: { noteId } });
+    // Enforce the daily cap only for a brand-new recording — re-recording an existing
+    // note replaces its file and shouldn't count against the limit again.
+    if (!existing && !(await this.entitlements.canRecord(user.id))) {
+      throw new HttpException(
+        { message: 'You’ve used your recording for today. Upgrade your plan or grab a booster for more.', code: 'RECORDING_LIMIT' },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
     if (existing && existing.storagePath !== path) {
       await this.storage.remove(existing.storagePath);
     }

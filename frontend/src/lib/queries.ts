@@ -9,10 +9,12 @@ import {
 import type {
   CreateFolderInput,
   CreateNoteInput,
+  Entitlements,
   Folder,
   ListNotesQuery,
   Note,
   NoteSummary,
+  Plan,
   Tag,
   UpdateNoteInput,
 } from '@nenap/types';
@@ -24,6 +26,7 @@ export const qk = {
   note: (id: string) => ['note', id] as const,
   folders: () => ['folders'] as const,
   tags: () => ['tags'] as const,
+  entitlements: () => ['entitlements'] as const,
 };
 
 function toQueryString(q: Partial<ListNotesQuery>): string {
@@ -126,6 +129,37 @@ export function useImproveNote(id: string) {
       void qc.invalidateQueries({ queryKey: qk.note(id) });
       void qc.invalidateQueries({ queryKey: ['notes'] });
     },
+  });
+}
+
+/** The current user's plan, effective tier, limits, usage, and any active booster. */
+export function useEntitlements() {
+  return useQuery({
+    queryKey: qk.entitlements(),
+    queryFn: () => apiFetch<Entitlements>('/billing/entitlements'),
+    staleTime: 30 * 1000,
+  });
+}
+
+/** DEV: set the subscription tier (stand-in for Stripe checkout). */
+export function useSetPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (plan: Plan) => apiFetch<void>('/billing/dev/plan', { method: 'POST', body: JSON.stringify({ plan }) }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.entitlements() });
+      void qc.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+}
+
+/** DEV: grant a booster pass (Pro for N days). */
+export function useGrantPass() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (days: 1 | 3 | 5) =>
+      apiFetch<void>('/billing/dev/pass', { method: 'POST', body: JSON.stringify({ days, level: 'pro' }) }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.entitlements() }),
   });
 }
 

@@ -37,18 +37,43 @@ enum TranscriptSource {
   upload
 }
 
+enum Plan {
+  free
+  basic
+  pro
+}
+
 model User {
   id          String   @id @db.Uuid // = Supabase auth user id
   email       String   @unique
   displayName String?
+  // Recurring subscription tier. Effective tier = max(plan, any active pass).
+  plan        Plan     @default(free)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   folders Folder[]
   notes   Note[]
   tags    Tag[]
+  passes  UserPass[]
 
   @@map("users")
+}
+
+/** A time-boxed booster: grants `level` until `expiresAt`, then auto-reverts. */
+model UserPass {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  level     Plan // tier this pass grants (typically pro)
+  startsAt  DateTime @default(now())
+  expiresAt DateTime
+  source    String   @default("grant") // grant | purchase
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("user_passes")
 }
 
 model Folder {

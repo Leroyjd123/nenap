@@ -4,6 +4,7 @@ import { RecordingsService } from './recordings.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { StorageService } from '../storage/storage.service';
 import type { ProcessingService } from '../processing/processing.service';
+import type { EntitlementsService } from '../billing/entitlements.service';
 import type { AuthUser } from '../auth/auth-user';
 
 const USER: AuthUser = { id: 'user-1', email: 'a@b.com' };
@@ -20,12 +21,14 @@ function makeService() {
     remove: vi.fn(),
   };
   const processing = { kickoff: vi.fn() };
+  const entitlements = { canRecord: vi.fn().mockResolvedValue(true) };
   const service = new RecordingsService(
     prisma as unknown as PrismaService,
     storage as unknown as StorageService,
     processing as unknown as ProcessingService,
+    entitlements as unknown as EntitlementsService,
   );
-  return { service, prisma, storage, processing };
+  return { service, prisma, storage, processing, entitlements };
 }
 
 describe('RecordingsService.sign', () => {

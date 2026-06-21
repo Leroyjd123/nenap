@@ -13,6 +13,7 @@ import { useSpeechTranscript } from '@/hooks/use-speech-transcript';
 import { useCreateNote, useFolders } from '@/lib/queries';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 import { fmtDuration, uploadRecording } from '@/lib/recordings';
+import { ApiError } from '@/lib/api';
 
 /** Record-first capture (from the dashboard): record now, name it on save, repeat. */
 export function RecordFirst() {
@@ -72,7 +73,12 @@ export function RecordFirst() {
       speech.reset();
       recorder.reset();
     } catch (e) {
-      toast.show(e instanceof Error ? e.message : 'Could not save recording');
+      if (e instanceof ApiError && e.status === 402) {
+        toast.show(e.message);
+        router.push('/plans');
+      } else {
+        toast.show(e instanceof Error ? e.message : 'Could not save recording');
+      }
     } finally {
       setSaving(false);
     }
