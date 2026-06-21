@@ -1,3 +1,5 @@
+// Must be first: initialises Sentry (no-op without SENTRY_DSN) before anything loads.
+import './instrument';
 import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

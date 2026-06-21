@@ -21,6 +21,11 @@ export const envSchema = z.object({
   // Optional — analytics is a no-op when the key is absent.
   POSTHOG_KEY: z.string().default(''),
   POSTHOG_HOST: z.string().default('https://us.i.posthog.com'),
+  // Sentry error tracking. Optional — no DSN means the SDK never initialises.
+  // (instrument.ts reads these from process.env directly, as it runs pre-bootstrap.)
+  SENTRY_DSN: z.string().default(''),
+  SENTRY_ENVIRONMENT: z.string().default(''),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
 });
 
 export type Env = z.infer<typeof envSchema>;

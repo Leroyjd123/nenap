@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { validateEnv } from './config/env';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -21,6 +22,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
+    // First import: captures errors from every module below (no-op without SENTRY_DSN).
+    SentryModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,
@@ -46,6 +49,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
     AttachmentsModule,
   ],
   providers: [
+    // Captures unhandled exceptions to Sentry, then delegates to Nest's default
+    // handling (so HTTP responses are unchanged). No-op without SENTRY_DSN.
+    { provide: APP_FILTER, useClass: SentryGlobalFilter },
     // Apply the throttler globally (runs alongside the auth guard).
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],

@@ -25,6 +25,7 @@
     "@nestjs/swagger": "^11.0.3",
     "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^6.3.0",
+    "@sentry/nestjs": "^10.59.0",
     "@supabase/supabase-js": "^2.47.10",
     "jose": "^5.9.6",
     "posthog-node": "^5.38.2",
