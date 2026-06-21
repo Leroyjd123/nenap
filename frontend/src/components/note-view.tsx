@@ -87,19 +87,19 @@ export function NoteView({ note: initial }: { note: Note }) {
         </button>
         <Brand className="text-[18px] hidden md:block" />
         <span className="grow" style={{ flex: 1 }} />
-        <Button variant="ghost" size="sm" onClick={() => setOrganise(true)}>
-          <Icon name="move" size={15} /> Organise
+        <Button variant="ghost" size="sm" onClick={() => setOrganise(true)} aria-label="Organise note">
+          <Icon name="move" size={15} /> <span className="hidden sm:inline">Organise</span>
         </Button>
-        <Button variant="soft" size="sm" onClick={() => router.push(`/notes/${note.id}/edit`)}>
-          <Icon name="edit" size={15} /> Edit
+        <Button variant="soft" size="sm" onClick={() => router.push(`/notes/${note.id}/edit`)} aria-label="Edit note">
+          <Icon name="edit" size={15} /> <span className="hidden sm:inline">Edit</span>
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)} style={{ color: 'var(--rec)' }}>
-          <Icon name="trash" size={15} /> Delete
+        <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)} style={{ color: 'var(--rec)' }} aria-label="Delete note">
+          <Icon name="trash" size={15} /> <span className="hidden sm:inline">Delete</span>
         </Button>
       </header>
 
       <div className="scrollable" style={{ flex: 1, overflowY: 'auto', padding: '8px 0 50px' }}>
-        <div style={{ maxWidth: 680, margin: '0 auto', padding: '12px var(--pad)' }}>
+        <div className="fade-up" style={{ maxWidth: 680, margin: '0 auto', padding: '12px var(--pad)' }}>
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, letterSpacing: '-0.015em', fontSize: 30, margin: '8px 0', lineHeight: 1.12 }}>
             {note.title || 'Untitled'}
           </h1>

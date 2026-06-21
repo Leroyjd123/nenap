@@ -140,11 +140,11 @@ export function Dashboard({ email }: { email?: string }) {
           action={<Button onClick={() => go('/notes/new')} loading={navTo === '/notes/new'}>Create your first note</Button>}
         />
       ) : view === 'cards' ? (
-        <div className="grid sm:grid-cols-2 gap-3.5">
+        <div className="grid sm:grid-cols-2 gap-3.5 stagger">
           {items.map((note) => <NoteCard key={note.id} note={note} folders={folders.data} />)}
         </div>
       ) : (
-        <div className="col" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="col stagger" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {items.map((note) => <NoteRow key={note.id} note={note} folders={folders.data} />)}
         </div>
       )}

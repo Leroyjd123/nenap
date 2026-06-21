@@ -54,7 +54,7 @@ export function LandingPage() {
       <main style={{ flex: 1 }}>
         {/* Hero */}
         <section
-          className="lp-wrap lp-hero"
+          className="lp-wrap lp-hero fade-up"
           style={{ background: 'radial-gradient(900px 460px at 50% -20%, var(--accent-tint), transparent 60%)' }}
         >
           <span className="eyebrow">A calm knowledge-capture app</span>
@@ -78,7 +78,7 @@ export function LandingPage() {
               <h2>Everything you capture, kept gently</h2>
               <p>Notes are primary, recording is supportive, and the AI stays invisible.</p>
             </div>
-            <div className="lp-grid">
+            <div className="lp-grid stagger">
               {FEATURES.map((f) => (
                 <div key={f.title} className="feature-card">
                   <div className="fc-icon"><Icon name={f.icon} size={20} /></div>

@@ -134,7 +134,7 @@ export function NoteEditor({ note }: { note?: Note }) {
             <AttachmentsSection noteId={effectiveId} ensureNoteId={ensureNoteId} editable />
           </div>
         </div>
-        <div className="border-t md:border-t-0 md:border-l border-line">
+        <div className="border-t md:border-t-0 md:border-l border-line min-h-[300px] md:min-h-0">
           <RecordingRail
             ref={railRef}
             ensureNoteId={ensureNoteId}
