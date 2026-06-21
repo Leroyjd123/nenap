@@ -1,13 +1,22 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import type { Note } from '@nenap/types';
 import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
-import { TiptapEditor } from './tiptap-editor';
 import { SaveNoteModal } from './save-note-modal';
+
+// Tiptap is heavy — load it only when the editor actually mounts, keeping the
+// editor routes' initial bundle small.
+const TiptapEditor = dynamic(() => import('./tiptap-editor').then((m) => m.TiptapEditor), {
+  ssr: false,
+  loading: () => (
+    <div className="prose-nenap" style={{ minHeight: 320, color: 'var(--ink-3)' }}>Loading editor…</div>
+  ),
+});
 import { RecordingRail, type RecordingRailHandle } from './recording-rail';
 import { AttachmentsSection } from '@/components/attachments-section';
 import { useCreateNote, useFolders, useUpdateNote } from '@/lib/queries';

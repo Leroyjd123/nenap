@@ -42,6 +42,12 @@ export function Dashboard({ email }: { email?: string }) {
     try { localStorage.setItem('nenap-view', v); } catch { /* private mode */ }
   }
 
+  // Warm the primary destinations so the first click feels instant.
+  useEffect(() => {
+    router.prefetch('/notes/new');
+    router.prefetch('/record');
+  }, [router]);
+
   // Any filter change resets to the first page.
   useEffect(() => { setPage(0); }, [folderId, withRec, debouncedSearch, fromDate, toDate]);
 
