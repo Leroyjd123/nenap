@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { AccountStats } from '@nenap/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { MailService } from '../mail/mail.service';
 import type { AuthUser } from '../auth/auth-user';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly mail: MailService,
   ) {}
 
   /**
@@ -35,6 +37,8 @@ export class UsersService {
     }
 
     await this.prisma.user.create({ data: { id: user.id, email } });
+    // New user — send a one-time welcome (fire-and-forget; no-op without Resend).
+    this.mail.sendWelcome(email);
   }
 
   /** Lifetime usage counters for the account page. */

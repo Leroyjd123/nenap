@@ -6,6 +6,8 @@ import type { GeminiService } from '../gemini/gemini.service';
 import type { EntitlementsService } from '../billing/entitlements.service';
 import type { AnalyticsService } from '../analytics/analytics.service';
 
+import type { MailService } from '../mail/mail.service';
+
 function makeService() {
   const prisma = {
     processingJob: { update: vi.fn().mockResolvedValue({}), findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn() },
@@ -26,6 +28,7 @@ function makeService() {
     gemini as unknown as GeminiService,
     { canImproveAgain: vi.fn().mockResolvedValue(true) } as unknown as EntitlementsService,
     { capture: vi.fn() } as unknown as AnalyticsService,
+    { sendProcessingFailed: vi.fn() } as unknown as MailService,
   );
   return { service, prisma, storage, gemini };
 }

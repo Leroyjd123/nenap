@@ -6,6 +6,7 @@ import { StorageService } from '../storage/storage.service';
 import { GeminiService } from '../gemini/gemini.service';
 import { EntitlementsService } from '../billing/entitlements.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { MailService } from '../mail/mail.service';
 import type { AuthUser } from '../auth/auth-user';
 
 const STUCK_AFTER_MS = 3 * 60 * 1000; // re-queue jobs stuck 'processing' this long
@@ -21,6 +22,7 @@ export class ProcessingService {
     private readonly gemini: GeminiService,
     private readonly entitlements: EntitlementsService,
     private readonly analytics: AnalyticsService,
+    private readonly mail: MailService,
   ) {}
 
   /** Fire-and-forget kick after a recording is saved or "Improve again" is tapped. */

@@ -26,6 +26,11 @@ export const envSchema = z.object({
   SENTRY_DSN: z.string().default(''),
   SENTRY_ENVIRONMENT: z.string().default(''),
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+  // Resend transactional email. Optional — no key means email is a no-op.
+  RESEND_API_KEY: z.string().default(''),
+  MAIL_FROM: z.string().default('Nenap <onboarding@resend.dev>'),
+  // Public app URL used for links in emails.
+  APP_URL: z.string().default('http://localhost:3000'),
 });
 
 export type Env = z.infer<typeof envSchema>;
