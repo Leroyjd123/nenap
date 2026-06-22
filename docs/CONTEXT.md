@@ -141,5 +141,27 @@ Founder tested the live app (Phases 1–4): "Overall it is fine with minor bugs"
 
 **Deferred (noted, not done — low value / churn risk now):** extracting a shared ownership-guard across NotesService/RecordingsService/FoldersService/ProcessingService; sweeping heavy inline styles in `note-view.tsx`/`recording-rail.tsx`/`login` into component CSS classes; humanizing API error copy by status code + 401→login redirect; modal focus-trap. Revisit during Phase 6 hardening. The dev-only demo-login button remains by design (founder uses it for testing; remove before prod).
 
+## Phase 5 — Autosave, Improve Again, Search — BUILT (2026-06-21)
+**Goal:** edits never lost; regeneration works; search finds notes efficiently.
+
+**Built:**
+- **Debounced autosave (2s after keystroke):** new hook `useAutosave()` in `frontend/src/hooks/use-autosave.ts`. Saves incremental `PATCH /notes/:id` to server; backend endpoint already exists from Phase 2. Respects enabled flag (autosave only when note has an id).
+- **localStorage draft backup + restoration:** `getDraftIfNewer()` checks localStorage on editor load; prompts user to restore or discard unsaved changes. `clearDraft()` removes draft on successful manual save. Graceful fallback if localStorage is unavailable.
+- **Editor status indicator:** header shows "draft" (new note) → "saving…" (network in-flight) → "unsaved" (pending change) → "saved" (committed to server).
+- **Improve Again:** already complete from Phase 4 (`POST /notes/:id/improve`). Button on Enhanced tab confirmed present in NoteView. Creates new `EnhancedNoteVersion`, throttled, checks entitlements.
+- **Full-text search:** **reverted before launch (2026-06-22).** The half-done infra (a migration whose timestamp predated `init` and would break `prisma migrate deploy`, plus a query that was never actually wired to the tsvector) was removed to keep the system clean. Search still works via substring/ILIKE match across title/content/tags/transcripts. FTS to be redone properly post-launch (RELEASE_PLAN M4.3).
+
+**Files changed (after the 2026-06-22 cleanup):**
+- `frontend/src/hooks/use-autosave.ts` (new) — debounced autosave + timestamp-based draft helpers (stable callback, reactive status)
+- `frontend/src/components/editor/note-editor.tsx` — integrated autosave hook + draft restoration UI
+
+**Verified (2026-06-22):** backend typecheck/lint + 22 tests green; frontend typecheck/lint green.
+
+**Remaining before "live":**
+1. Test end-to-end: edit note, verify autosave fires 2s after keystroke, close browser, reopen, see restoration prompt.
+2. Re-add full-text search properly post-launch (RELEASE_PLAN M4.3).
+
+**Decision:** Phase 5 polish complete (autosave). FTS deferred. See `docs/RELEASE_PLAN.md` for the path to launch.
+
 ## Decision rule for the future
 When a request conflicts with an approved decision here, **stop and confirm** rather than silently override. Update this log whenever a decision is made or changed.

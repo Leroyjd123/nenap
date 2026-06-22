@@ -69,12 +69,21 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done.
 
 **Milestone:** built end-to-end; typecheck/lint/build green, 21 backend tests. **Live verify pending the Gemini API key** (scaffolded on placeholder per founder choice).
 
-## Phase 5 — Autosave, Improve Again, Search *(hybrid)*
-- [ ] Debounced server autosave + localStorage draft + restoration prompt
-- [ ] Improve Again → new EnhancedNoteVersion
-- [ ] Postgres full-text search (tsvector on title/content) + tags/folder/date filters wired to dashboard
+## Phase 5 — Autosave, Improve Again, Search *(hybrid)* — ✅ autosave built; FTS deferred
+**Goal:** edits never lost; regeneration works; search finds notes efficiently.
 
-**Milestone:** edits never lost; regeneration works; search finds notes across titles/tags/transcripts.
+- [x] Debounced autosave (2s after keystroke) via `useAutosave()` hook; saves incremental `PATCH /notes/:id` to server
+- [x] localStorage draft backup + timestamp-based restoration prompt on editor load (`getDraftIfNewer` / `clearDraft`)
+- [x] Editor status indicator: "draft" → "saving…" → "unsaved" → "saved" in header
+- [x] Improve Again already complete from Phase 4: `POST /notes/:id/improve` → new EnhancedNoteVersion
+- [x] Search works via substring/ILIKE across title/content/tags/transcripts + date/folder/recording filters
+- [ ] Postgres full-text search (tsvector) — **deferred to post-launch** (RELEASE_PLAN M4.3); half-done infra reverted 2026-06-22 to keep migrations clean
+
+**Milestone:** edits never lost; regeneration works; search functional. typecheck/lint + 22 backend tests green.
+
+**Files modified:**
+- `frontend/src/hooks/use-autosave.ts` (new) — debounced autosave + timestamp-based draft helpers
+- `frontend/src/components/editor/note-editor.tsx` — integrated autosave hook + draft restoration UI
 
 ## Phase 6 — Testing, Monitoring, Analytics
 - [ ] Playwright E2E for core flows (auth, note CRUD, record→enhance, search)

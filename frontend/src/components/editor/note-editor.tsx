@@ -8,6 +8,7 @@ import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { SaveNoteModal } from './save-note-modal';
+import { useAutosave, getDraftIfNewer, clearDraft, type DraftPayload } from '@/hooks/use-autosave';
 
 // Tiptap is heavy — load it only when the editor actually mounts, keeping the
 // editor routes' initial bundle small.
@@ -26,6 +27,7 @@ import { capture } from '@/lib/analytics';
 /**
  * Editor for new and existing notes. Capture-first: write straight away, organise at
  * save. Recording attaches to the note (a draft is created on first record if needed).
+ * Autosaves incrementally, recovering from localStorage if the app crashes.
  */
 export function NoteEditor({ note }: { note?: Note }) {
   useDocumentTitle(note ? 'Editing note — Nenap' : 'New note — Nenap');
@@ -40,18 +42,51 @@ export function NoteEditor({ note }: { note?: Note }) {
   const [title, setTitle] = useState(note?.title ?? '');
   const [content, setContent] = useState(note?.originalContent ?? '');
   const [modalOpen, setModalOpen] = useState(false);
+  const [draftRestorePrompt, setDraftRestorePrompt] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<DraftPayload | null>(null);
   const railRef = useRef<RecordingRailHandle>(null);
+  const { autosave: triggerAutosave, isSaving: autosaving, hasUnsaved } = useAutosave(
+    effectiveId,
+    { title, originalContent: content },
+    !!effectiveId,
+  );
 
   useEffect(() => {
     if (note) {
       setTitle(note.title);
       setContent(note.originalContent);
+
+      // Check for a localStorage draft newer than the server version
+      const draft = getDraftIfNewer(note.id, new Date(note.updatedAt));
+      if (draft) {
+        setPendingDraft(draft);
+        setDraftRestorePrompt(true);
+      }
     }
   }, [note]);
+
+  // Persist edits to an existing note shortly after typing stops (debounced in the hook).
+  useEffect(() => {
+    if (effectiveId) triggerAutosave({ title, originalContent: content });
+  }, [title, content, effectiveId, triggerAutosave]);
 
   const saving = createNote.isPending || updateNote.isPending;
   const plainBody = content.replace(/<[^>]*>/g, '').trim();
   const isEmpty = !title.trim() && !plainBody;
+
+  function restoreDraft() {
+    if (pendingDraft) {
+      if (pendingDraft.title !== undefined) setTitle(pendingDraft.title);
+      if (pendingDraft.originalContent !== undefined) setContent(pendingDraft.originalContent);
+    }
+    setDraftRestorePrompt(false);
+    toast.show('Draft restored');
+  }
+
+  function discardDraft() {
+    if (effectiveId) clearDraft(effectiveId);
+    setDraftRestorePrompt(false);
+  }
 
   /**
    * Used by both Save and Record: persist current content, returning the note id.
@@ -99,6 +134,10 @@ export function NoteEditor({ note }: { note?: Note }) {
       }
       // ...then flush an in-progress recording so Save captures both note and audio.
       if (wasRecording) await railRef.current?.finalize();
+      
+      // Clear draft on successful save
+      if (id) clearDraft(id);
+      
       capture(note ? 'note_saved' : 'note_created', { withRecording: wasRecording, autoOrganise: !!autoOrganise });
       setModalOpen(false);
       if (wasRecording) {
@@ -125,11 +164,25 @@ export function NoteEditor({ note }: { note?: Note }) {
           <Brand className="text-[18px]" />
         </button>
         <span className="grow" style={{ flex: 1 }} />
-        <span className="meta">{effectiveId ? 'saved' : 'draft'}</span>
+        <span className="meta">
+          {!effectiveId ? 'draft' : autosaving ? 'saving…' : hasUnsaved ? 'unsaved' : 'saved'}
+        </span>
         <Button size="sm" onClick={openSave} loading={saving} disabled={isEmpty && !effectiveId}>
           {note ? 'Save' : 'Save note'}
         </Button>
       </header>
+
+      {/* Draft restoration prompt */}
+      {draftRestorePrompt && pendingDraft && (
+        <div className="bg-surface border-b border-line px-[var(--pad)] py-3 flex items-center gap-3">
+          <div className="flex-1">
+            <p className="eyebrow text-sm">Unsaved changes found</p>
+            <p className="meta text-xs">Restore your recent edits from your last session?</p>
+          </div>
+          <button onClick={restoreDraft} className="btn btn-sm btn-primary">Restore</button>
+          <button onClick={discardDraft} className="btn btn-sm btn-ghost">Discard</button>
+        </div>
+      )}
 
       {/* Desktop: notes + recording rail. Mobile: stacked. */}
       <div className="flex-1 grid md:grid-cols-[1fr_300px]" style={{ minHeight: 0 }}>
