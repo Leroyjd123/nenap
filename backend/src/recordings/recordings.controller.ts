@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CompleteRecordingInput, SignRecordingInput } from '@nenap/types';
@@ -17,7 +17,7 @@ export class RecordingsController {
   @Post('sign')
   sign(
     @CurrentUser() user: AuthUser,
-    @Param('noteId') noteId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
     @Body(new ZodValidationPipe(SignRecordingInput)) body: SignRecordingInput,
   ) {
     return this.recordings.sign(user, noteId, body);
@@ -26,14 +26,14 @@ export class RecordingsController {
   @Post('complete')
   complete(
     @CurrentUser() user: AuthUser,
-    @Param('noteId') noteId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
     @Body(new ZodValidationPipe(CompleteRecordingInput)) body: CompleteRecordingInput,
   ) {
     return this.recordings.complete(user, noteId, body);
   }
 
   @Get('url')
-  playbackUrl(@CurrentUser() user: AuthUser, @Param('noteId') noteId: string) {
+  playbackUrl(@CurrentUser() user: AuthUser, @Param('noteId', ParseUUIDPipe) noteId: string) {
     return this.recordings.getPlaybackUrl(user, noteId);
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateFolderInput, UpdateFolderInput } from '@nenap/types';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -28,7 +28,7 @@ export class FoldersController {
   @Patch(':id')
   update(
     @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(UpdateFolderInput)) body: UpdateFolderInput,
   ) {
     return this.folders.update(user, id, body);
@@ -36,7 +36,7 @@ export class FoldersController {
 
   @Delete(':id')
   @HttpCode(204)
-  remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  remove(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.folders.remove(user, id);
   }
 }

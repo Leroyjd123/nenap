@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateAttachmentInput, SignAttachmentInput } from '@nenap/types';
@@ -14,7 +14,7 @@ export class AttachmentsController {
   constructor(private readonly attachments: AttachmentsService) {}
 
   @Get()
-  list(@CurrentUser() user: AuthUser, @Param('noteId') noteId: string) {
+  list(@CurrentUser() user: AuthUser, @Param('noteId', ParseUUIDPipe) noteId: string) {
     return this.attachments.list(user, noteId);
   }
 
@@ -22,7 +22,7 @@ export class AttachmentsController {
   @Post('sign')
   sign(
     @CurrentUser() user: AuthUser,
-    @Param('noteId') noteId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
     @Body(new ZodValidationPipe(SignAttachmentInput)) body: SignAttachmentInput,
   ) {
     return this.attachments.sign(user, noteId, body);
@@ -31,7 +31,7 @@ export class AttachmentsController {
   @Post()
   create(
     @CurrentUser() user: AuthUser,
-    @Param('noteId') noteId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
     @Body(new ZodValidationPipe(CreateAttachmentInput)) body: CreateAttachmentInput,
   ) {
     return this.attachments.create(user, noteId, body);
@@ -41,8 +41,8 @@ export class AttachmentsController {
   @HttpCode(204)
   remove(
     @CurrentUser() user: AuthUser,
-    @Param('noteId') noteId: string,
-    @Param('attachmentId') attachmentId: string,
+    @Param('noteId', ParseUUIDPipe) noteId: string,
+    @Param('attachmentId', ParseUUIDPipe) attachmentId: string,
   ) {
     return this.attachments.remove(user, noteId, attachmentId);
   }
