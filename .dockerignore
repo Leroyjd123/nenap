@@ -1,0 +1,18 @@
+# Keep the Docker build context small and reproducible — never ship host artifacts.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+.git
+.github
+**/*.log
+# Secrets come from the host's env vars at runtime, never baked into the image.
+**/.env
+**/.env.*
+!**/.env.example
+# Not needed by the backend image.
+frontend/.next
+design
+design-system
+docs

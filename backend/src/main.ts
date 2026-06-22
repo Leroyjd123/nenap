@@ -28,9 +28,10 @@ async function bootstrap(): Promise<void> {
     .build();
   SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
 
-  const port = config.get<number>('BACKEND_PORT') ?? 4000;
-  await app.listen(port);
-  logger.log(`Nenap backend listening on http://localhost:${port} (docs at /docs)`);
+  // Hosts like Render/Cloud Run inject PORT; honour it first. Bind 0.0.0.0 for containers.
+  const port = Number(process.env.PORT) || config.get<number>('BACKEND_PORT') || 4000;
+  await app.listen(port, '0.0.0.0');
+  logger.log(`Nenap backend listening on port ${port} (docs at /docs)`);
 }
 
 void bootstrap();

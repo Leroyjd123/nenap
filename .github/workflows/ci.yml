@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 jobs:
@@ -22,6 +22,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build shared types
+        run: pnpm --filter @nenap/types build
 
       - name: Generate Prisma client
         run: pnpm --filter @nenap/backend prisma generate
