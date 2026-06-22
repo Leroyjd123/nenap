@@ -1,0 +1,59 @@
+# Render Blueprint for the DEV backend.
+# Deploy: Render Dashboard → New → Blueprint → pick this repo (branch: develop).
+# Render reads this file, creates the service, and prompts for every `sync: false`
+# value. Non-secret config is inlined below.
+services:
+  - type: web
+    name: nenap-backend-dev
+    runtime: docker
+    branch: develop
+    plan: free
+    region: singapore # closest Render region to the Supabase ap-northeast-1 (Tokyo) DB
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: . # repo root — backend is a pnpm-workspace package
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # --- non-secret config (safe to commit) ---
+      - key: SUPABASE_URL
+        value: https://iohmtxsvrymrazyyakdo.supabase.co
+      - key: RECORDINGS_BUCKET
+        value: recordings
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: POSTHOG_HOST
+        value: https://eu.i.posthog.com
+      - key: LANGFUSE_BASEURL
+        value: https://cloud.langfuse.com
+      - key: SENTRY_ENVIRONMENT
+        value: development
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.1"
+      - key: SENTRY_PROFILE_SESSION_SAMPLE_RATE
+        value: "0.1"
+      # --- secrets: prompted on create / set in dashboard (copy from backend/.env) ---
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: POSTHOG_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+      # --- set AFTER the Vercel URL exists (leave blank for now) ---
+      - key: CORS_ORIGINS
+        sync: false
+      - key: APP_URL
+        sync: false
