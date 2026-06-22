@@ -7,6 +7,7 @@ import { GeminiService } from '../gemini/gemini.service';
 import { EntitlementsService } from '../billing/entitlements.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { MailService } from '../mail/mail.service';
+import { LangfuseService, type LangfuseTraceClient } from '../langfuse/langfuse.service';
 import type { AuthUser } from '../auth/auth-user';
 
 const STUCK_AFTER_MS = 3 * 60 * 1000; // re-queue jobs stuck 'processing' this long
@@ -23,6 +24,7 @@ export class ProcessingService {
     private readonly entitlements: EntitlementsService,
     private readonly analytics: AnalyticsService,
     private readonly mail: MailService,
+    private readonly langfuse: LangfuseService,
   ) {}
 
   /** Fire-and-forget kick after a recording is saved or "Improve again" is tapped. */
@@ -130,12 +132,19 @@ export class ProcessingService {
     });
     if (!note) throw new NotFoundException('Note no longer exists');
 
+    // One Langfuse trace per job groups its Gemini calls (no-op when disabled).
+    const trace = this.langfuse.trace({
+      name: 'note-processing',
+      userId: note.userId,
+      metadata: { noteId, jobType: job.type },
+    });
+
     // Transcribe the specific recording this job is for (one transcript per clip).
     if (job.type === 'transcribe' && job.recordingId) {
       const recording = await this.prisma.recording.findUnique({ where: { id: job.recordingId } });
       if (recording) {
         const blob = await this.storage.downloadFile(recording.storagePath);
-        const text = await this.gemini.transcribe(blob, recording.mimeType);
+        const text = await this.gemini.transcribe(blob, recording.mimeType, trace);
         await this.prisma.transcript.upsert({
           where: { recordingId: recording.id },
           update: { content: text, source: 'gemini', noteId },
@@ -151,7 +160,7 @@ export class ProcessingService {
       select: { content: true },
     });
     const combined = transcripts.map((t) => t.content).filter(Boolean).join('\n\n');
-    const enhanced = await this.gemini.enhance(note.originalContent, combined);
+    const enhanced = await this.gemini.enhance(note.originalContent, combined, trace);
 
     const last = await this.prisma.enhancedNoteVersion.findFirst({
       where: { noteId },
@@ -164,7 +173,7 @@ export class ProcessingService {
 
     // Opt-in: let the AI suggest a folder + tags. Best-effort, never fails the job.
     if (note.autoOrganise) {
-      await this.autoOrganise(note.id, note.userId, note.folderId, note.originalContent, combined, enhanced);
+      await this.autoOrganise(note.id, note.userId, note.folderId, note.originalContent, combined, enhanced, trace);
     }
     return note.userId;
   }
@@ -177,9 +186,10 @@ export class ProcessingService {
     original: string,
     transcript: string,
     enhanced: string,
+    trace?: LangfuseTraceClient,
   ): Promise<void> {
     try {
-      const { folder, tags } = await this.gemini.organise(original, transcript, enhanced);
+      const { folder, tags } = await this.gemini.organise(original, transcript, enhanced, trace);
       const data: Prisma.NoteUpdateInput = {};
       if (folder && !currentFolderId) {
         data.folder = {

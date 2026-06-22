@@ -1,6 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, type GenerateContentResponse } from '@google/genai';
+import type { GenerationUsage, LangfuseTraceClient } from '../langfuse/langfuse.service';
 
 const TRANSCRIBE_PROMPT =
   'Transcribe this audio verbatim into clean, readable text. Fix only obvious filler and false starts. ' +
@@ -47,33 +48,47 @@ export class GeminiService {
   }
 
   /** Transcribe an audio blob via the Files API (robust for longer recordings). */
-  async transcribe(audio: Blob, mimeType: string): Promise<string> {
+  async transcribe(audio: Blob, mimeType: string, trace?: LangfuseTraceClient): Promise<string> {
     const ai = this.require();
     const uploaded = await ai.files.upload({ file: audio, config: { mimeType } });
     const fileUri = await this.waitForActive(uploaded.name, uploaded.uri);
 
-    const res = await ai.models.generateContent({
-      model: this.model,
-      contents: [{ role: 'user', parts: [{ fileData: { fileUri, mimeType } }, { text: TRANSCRIBE_PROMPT }] }],
-    });
-    return (res.text ?? '').trim();
+    const generation = trace?.generation({ name: 'transcribe', model: this.model, input: { mimeType, prompt: TRANSCRIBE_PROMPT } });
+    try {
+      const res = await ai.models.generateContent({
+        model: this.model,
+        contents: [{ role: 'user', parts: [{ fileData: { fileUri, mimeType } }, { text: TRANSCRIBE_PROMPT }] }],
+      });
+      const output = (res.text ?? '').trim();
+      generation?.end({ output, usageDetails: this.usageFrom(res) });
+      return output;
+    } catch (err) {
+      generation?.end({ level: 'ERROR', statusMessage: (err as Error).message });
+      throw err;
+    }
   }
 
   /** Produce an enhanced HTML version from the user's note + transcript. */
-  async enhance(original: string, transcript: string): Promise<string> {
+  async enhance(original: string, transcript: string, trace?: LangfuseTraceClient): Promise<string> {
     const ai = this.require();
-    const res = await ai.models.generateContent({
-      model: this.model,
-      contents: enhancePrompt(original, transcript),
-    });
-    return this.stripFences((res.text ?? '').trim());
+    const input = enhancePrompt(original, transcript);
+    const generation = trace?.generation({ name: 'enhance', model: this.model, input });
+    try {
+      const res = await ai.models.generateContent({ model: this.model, contents: input });
+      const output = this.stripFences((res.text ?? '').trim());
+      generation?.end({ output, usageDetails: this.usageFrom(res) });
+      return output;
+    } catch (err) {
+      generation?.end({ level: 'ERROR', statusMessage: (err as Error).message });
+      throw err;
+    }
   }
 
   /**
    * Suggests a single folder name and a few tags for a note. Best-effort — returns
    * empty suggestions if the model misbehaves (the caller treats it as optional).
    */
-  async organise(original: string, transcript: string, enhanced: string): Promise<{ folder: string | null; tags: string[] }> {
+  async organise(original: string, transcript: string, enhanced: string, trace?: LangfuseTraceClient): Promise<{ folder: string | null; tags: string[] }> {
     const ai = this.require();
     const prompt = [
       'You categorise a personal note. Return ONLY minified JSON, no prose, no code fences.',
@@ -85,7 +100,14 @@ export class GeminiService {
       `NOTE:\n${enhanced || original || transcript || '(empty)'}`,
     ].join('\n');
 
-    const res = await ai.models.generateContent({ model: this.model, contents: prompt });
+    const generation = trace?.generation({ name: 'organise', model: this.model, input: prompt });
+    let res: GenerateContentResponse;
+    try {
+      res = await ai.models.generateContent({ model: this.model, contents: prompt });
+    } catch (err) {
+      generation?.end({ level: 'ERROR', statusMessage: (err as Error).message });
+      throw err;
+    }
     const raw = this.stripFences((res.text ?? '').trim());
     try {
       const parsed = JSON.parse(raw) as { folder?: unknown; tags?: unknown };
@@ -93,11 +115,24 @@ export class GeminiService {
       const tags = Array.isArray(parsed.tags)
         ? [...new Set(parsed.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim().toLowerCase()).filter(Boolean))].slice(0, 5)
         : [];
+      generation?.end({ output: { folder, tags }, usageDetails: this.usageFrom(res) });
       return { folder, tags };
     } catch {
       this.logger.warn('organise(): could not parse Gemini JSON; skipping suggestions');
+      generation?.end({ output: raw, level: 'WARNING', statusMessage: 'unparseable JSON', usageDetails: this.usageFrom(res) });
       return { folder: null, tags: [] };
     }
+  }
+
+  /** Maps a Gemini response's token counts to Langfuse's usage shape (for cost/latency). */
+  private usageFrom(res: GenerateContentResponse): GenerationUsage | undefined {
+    const u = res.usageMetadata;
+    if (!u) return undefined;
+    return {
+      input: u.promptTokenCount ?? 0,
+      output: u.candidatesTokenCount ?? 0,
+      total: u.totalTokenCount ?? 0,
+    };
   }
 
   private require(): GoogleGenAI {

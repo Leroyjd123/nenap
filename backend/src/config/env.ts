@@ -31,6 +31,11 @@ export const envSchema = z.object({
   MAIL_FROM: z.string().default('Nenap <onboarding@resend.dev>'),
   // Public app URL used for links in emails.
   APP_URL: z.string().default('http://localhost:3000'),
+  // Langfuse LLM observability. Optional — both keys absent means tracing is a no-op.
+  // EU cloud: https://cloud.langfuse.com · US cloud: https://us.cloud.langfuse.com
+  LANGFUSE_PUBLIC_KEY: z.string().default(''),
+  LANGFUSE_SECRET_KEY: z.string().default(''),
+  LANGFUSE_BASEURL: z.string().default('https://cloud.langfuse.com'),
 });
 
 export type Env = z.infer<typeof envSchema>;
