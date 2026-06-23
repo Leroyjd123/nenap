@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { IsoDate } from './common.js';
 
-/** Subscription tiers. Effective tier = max(plan, any active booster pass). */
-export const Plan = z.enum(['free', 'basic', 'pro']);
+/** Tiers (low → high). Effective tier = max(plan, any active pass). */
+export const Plan = z.enum(['free', 'pro', 'enterprise']);
 export type Plan = z.infer<typeof Plan>;
 
 /** Per-tier capability limits. `recordingsPerDay: null` means unlimited. */
@@ -37,8 +37,8 @@ export type SetPlanInput = z.infer<typeof SetPlanInput>;
 export const GrantPassInput = z.object({ days: BoosterDays, level: Plan.default('pro') });
 export type GrantPassInput = z.infer<typeof GrantPassInput>;
 
-/** Purchasable items. Boosters grant Pro for N days; plans grant a tier for 30 days. */
-export const CheckoutSku = z.enum(['booster_1d', 'booster_3d', 'booster_5d', 'basic_30d', 'pro_30d']);
+/** Purchasable items. Boosters grant a short Enterprise burst; plans grant a tier for 30 days. */
+export const CheckoutSku = z.enum(['booster_1d', 'booster_3d', 'booster_5d', 'pro_30d', 'enterprise_30d']);
 export type CheckoutSku = z.infer<typeof CheckoutSku>;
 
 /** Client asks the server to create a Razorpay order for a SKU (amount is server-set). */
@@ -64,3 +64,17 @@ export const VerifyPaymentInput = z.object({
   razorpaySignature: z.string().min(1),
 });
 export type VerifyPaymentInput = z.infer<typeof VerifyPaymentInput>;
+
+/** A past purchase, for the account order history. */
+export const Order = z.object({
+  id: z.string(),
+  sku: CheckoutSku,
+  level: Plan,
+  days: z.number().int(),
+  amount: z.number().int(), // paise
+  currency: z.string(),
+  status: z.enum(['created', 'paid', 'failed']),
+  createdAt: IsoDate,
+  paidAt: IsoDate.nullable(),
+});
+export type Order = z.infer<typeof Order>;

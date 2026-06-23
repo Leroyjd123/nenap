@@ -23,6 +23,12 @@ export class BillingController {
     return this.entitlements.resolve(user.id);
   }
 
+  /** The user's purchase history (for the account page). */
+  @Get('orders')
+  getOrders(@CurrentUser() user: AuthUser) {
+    return this.billing.listOrders(user);
+  }
+
   /** DEV ONLY: set the subscription tier (stand-in for Stripe checkout). */
   @Post('dev/plan')
   @HttpCode(204)

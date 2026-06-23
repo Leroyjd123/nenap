@@ -16,6 +16,7 @@ import type {
   ListNotesQuery,
   Note,
   NotesPage,
+  Order,
   Plan,
   Tag,
   UpdateNoteInput,
@@ -29,6 +30,7 @@ export const qk = {
   folders: () => ['folders'] as const,
   tags: () => ['tags'] as const,
   entitlements: () => ['entitlements'] as const,
+  orders: () => ['orders'] as const,
 };
 
 function toQueryString(q: Partial<ListNotesQuery>): string {
@@ -152,6 +154,15 @@ export function useSetPlan() {
       void qc.invalidateQueries({ queryKey: qk.entitlements() });
       void qc.invalidateQueries({ queryKey: ['notes'] });
     },
+  });
+}
+
+/** The user's purchase history (order list) for the account page. */
+export function useOrders() {
+  return useQuery({
+    queryKey: qk.orders(),
+    queryFn: () => apiFetch<Order[]>('/billing/orders'),
+    staleTime: 30 * 1000,
   });
 }
 

@@ -22,23 +22,24 @@ const TIERS: { plan: Plan; name: string; price: string; per?: string; sku?: Chec
     features: ['Unlimited notes, folders, tags & search', '1 voice recording / day', 'Up to 5-minute recordings', 'Photos on notes (small)'],
   },
   {
-    plan: 'basic',
-    name: 'Basic',
+    plan: 'pro',
+    name: 'Pro',
     price: '₹149',
     per: '30 days',
-    sku: 'basic_30d',
+    sku: 'pro_30d',
     features: ['Everything in Free', '~10 recordings / day', 'Up to 30-minute recordings', '“Improve again” regeneration', 'File uploads · 2 GB storage'],
   },
   {
-    plan: 'pro',
-    name: 'Pro',
+    plan: 'enterprise',
+    name: 'Enterprise',
     price: '₹399',
     per: '30 days',
-    sku: 'pro_30d',
-    features: ['Everything in Basic', 'Unlimited recordings', 'Up to 60-minute recordings', '20 GB storage', 'Priority processing'],
+    sku: 'enterprise_30d',
+    features: ['Everything in Pro', 'Unlimited recordings', 'Up to 60-minute recordings', '20 GB storage', 'Priority processing'],
   },
 ];
 
+// Boosters grant a short full-Enterprise burst, then revert on their own.
 const BOOSTERS: { label: string; price: string; sku: CheckoutSku }[] = [
   { label: '1 day', price: '₹29', sku: 'booster_1d' },
   { label: '3 days', price: '₹69', sku: 'booster_3d' },
@@ -51,7 +52,6 @@ function Plans() {
   const ent = useEntitlements();
   const { checkout, pendingSku } = useCheckout();
 
-  const plan = ent.data?.plan ?? 'free';
   const tier = ent.data?.tier ?? 'free';
   const usage = ent.data?.usage.recordingsToday ?? 0;
   const cap = ent.data?.limits.recordingsPerDay ?? null;
@@ -77,18 +77,20 @@ function Plans() {
         {/* Current status */}
         <div style={{ background: 'var(--accent-tint)', border: '1px solid var(--accent-line)', borderRadius: 'var(--r)', padding: '14px 16px', marginBottom: 28, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
           <span style={{ fontWeight: 600, color: 'var(--accent-deep)', textTransform: 'capitalize' }}>
-            Current: {tier}{tier !== plan ? ` (plan: ${plan})` : ''}
-          </span>
-          <span className="meta">·</span>
-          <span className="meta">
-            Recordings today: {usage}{cap === null ? ' (unlimited)' : ` / ${cap}`}
+            Current: {tier}
           </span>
           {pass && (
             <>
               <span className="meta">·</span>
-              <span className="meta">Booster active until {new Date(pass.expiresAt).toLocaleString()}</span>
+              <span className="meta">
+                {pass.level} until {new Date(pass.expiresAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
             </>
           )}
+          <span className="meta">·</span>
+          <span className="meta">
+            Recordings today: {usage}{cap === null ? ' (unlimited)' : ` / ${cap}`}
+          </span>
         </div>
 
         {/* Tiers */}
@@ -127,13 +129,13 @@ function Plans() {
         {/* Boosters */}
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 24, margin: '0 0 6px' }}>Booster packs</h2>
         <p style={{ color: 'var(--ink-2)', fontSize: 14, margin: '0 0 16px', maxWidth: 540, lineHeight: 1.55 }}>
-          Need a short burst — exam week, a conference? A booster gives you full <strong>Pro</strong> access for a few days, then reverts on its own.
+          Need a short burst — exam week, a conference? A booster gives you full <strong>Enterprise</strong> access for a few days, then reverts on its own.
         </p>
         <div className="lp-grid" style={{ marginBottom: 32 }}>
           {BOOSTERS.map((b) => (
             <div key={b.sku} className="feature-card">
               <div className="fc-icon"><Icon name="spark" size={20} /></div>
-              <h3>Pro for {b.label}</h3>
+              <h3>Enterprise for {b.label}</h3>
               <p>Unlimited recordings, file uploads, and Improve again for {b.label}.</p>
               <Button
                 size="block"
@@ -142,7 +144,7 @@ function Plans() {
                 loading={pendingSku === b.sku}
                 onClick={() => checkout(b.sku)}
               >
-                Get Pro for {b.label} · {b.price}
+                Get Enterprise for {b.label} · {b.price}
               </Button>
             </div>
           ))}

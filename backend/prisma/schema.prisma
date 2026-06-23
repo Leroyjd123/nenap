@@ -39,8 +39,8 @@ enum TranscriptSource {
 
 enum Plan {
   free
-  basic
   pro
+  enterprise
 }
 
 enum AttachmentKind {
@@ -57,12 +57,34 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  folders Folder[]
-  notes   Note[]
-  tags    Tag[]
-  passes  UserPass[]
+  folders  Folder[]
+  notes    Note[]
+  tags     Tag[]
+  passes   UserPass[]
+  payments Payment[]
 
   @@map("users")
+}
+
+/** A purchase record (Razorpay order). Gives users an order history + expiry visibility. */
+model Payment {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @db.Uuid
+  sku               String // e.g. pro_30d, enterprise_30d, booster_3d
+  level             Plan // tier granted
+  days              Int
+  amount            Int // INR paise
+  currency          String    @default("INR")
+  status            String    @default("created") // created | paid | failed
+  razorpayOrderId   String    @unique
+  razorpayPaymentId String?
+  createdAt         DateTime  @default(now())
+  paidAt            DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("payments")
 }
 
 /** A time-boxed booster: grants `level` until `expiresAt`, then auto-reverts. */

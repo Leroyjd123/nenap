@@ -6,35 +6,32 @@ import { PrismaService } from '../prisma/prisma.service';
 /** Capability limits per tier. `recordingsPerDay: null` = unlimited. */
 const LIMITS: Record<PlanType, TierLimits> = {
   free: { recordingsPerDay: 1, maxRecordingSec: 300, improveAgain: false, fileUploads: false, maxPhotosPerNote: 3, storageMb: 100 },
-  basic: { recordingsPerDay: 10, maxRecordingSec: 1800, improveAgain: true, fileUploads: true, maxPhotosPerNote: 20, storageMb: 2048 },
-  pro: { recordingsPerDay: null, maxRecordingSec: 3600, improveAgain: true, fileUploads: true, maxPhotosPerNote: 100, storageMb: 20480 },
+  pro: { recordingsPerDay: 10, maxRecordingSec: 1800, improveAgain: true, fileUploads: true, maxPhotosPerNote: 20, storageMb: 2048 },
+  enterprise: { recordingsPerDay: null, maxRecordingSec: 3600, improveAgain: true, fileUploads: true, maxPhotosPerNote: 100, storageMb: 20480 },
 };
 
-const RANK: Record<PlanType, number> = { free: 0, basic: 1, pro: 2 };
+const RANK: Record<PlanType, number> = { free: 0, pro: 1, enterprise: 2 };
 
 @Injectable()
 export class EntitlementsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Resolves the user's effective tier (max of subscription + any active pass). */
+  /** Resolves the user's effective tier (max of subscription + the highest active pass). */
   async resolve(userId: string): Promise<Entitlements> {
     const now = new Date();
     const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
     const plan: PlanType = user?.plan ?? 'free';
 
-    const pass = await this.prisma.userPass.findFirst({
-      where: { userId, expiresAt: { gt: now } },
-      orderBy: { expiresAt: 'desc' },
-    });
+    // At most one active pass per level (grants extend, not stack), so the highest-ranked
+    // active pass is the effective booster; show its expiry.
+    const passes = await this.prisma.userPass.findMany({ where: { userId, expiresAt: { gt: now } } });
+    let best: (typeof passes)[number] | null = null;
+    for (const p of passes) {
+      if (!best || RANK[p.level] > RANK[best.level]) best = p;
+    }
 
-    let tier: PlanType = plan;
-    let activePass: Entitlements['activePass'] = null;
-    if (pass && RANK[pass.level] > RANK[tier]) {
-      tier = pass.level;
-    }
-    if (pass) {
-      activePass = { level: pass.level, expiresAt: pass.expiresAt.toISOString() };
-    }
+    const tier: PlanType = best && RANK[best.level] > RANK[plan] ? best.level : plan;
+    const activePass = best ? { level: best.level, expiresAt: best.expiresAt.toISOString() } : null;
 
     return {
       plan,

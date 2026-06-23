@@ -11,7 +11,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Icon } from '@/components/ui/icon';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-session';
-import { useAccountStats, useDeleteAccount, useEntitlements } from '@/lib/queries';
+import { useAccountStats, useDeleteAccount, useEntitlements, useOrders } from '@/lib/queries';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 import { fmtBytes } from '@/lib/attachments';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -32,14 +32,16 @@ function Account() {
   const { session } = useSession();
   const ent = useEntitlements();
   const stats = useAccountStats();
+  const orders = useOrders();
   const del = useDeleteAccount();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const email = session?.user.email ?? '—';
   const tier = ent.data?.tier ?? 'free';
-  const plan = ent.data?.plan ?? 'free';
   const pass = ent.data?.activePass ?? null;
   const s = stats.data;
+  const paidOrders = (orders.data ?? []).filter((o) => o.status === 'paid');
+  const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
   async function signOut() {
     await getSupabaseBrowserClient().auth.signOut();
@@ -84,12 +86,38 @@ function Account() {
         {/* Plan */}
         <div style={{ background: 'var(--accent-tint)', border: '1px solid var(--accent-line)', borderRadius: 'var(--r)', padding: '16px 20px', marginBottom: 28, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
           <div className="grow" style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, color: 'var(--accent-deep)', textTransform: 'capitalize' }}>
-              {tier} plan{tier !== plan ? ` · booster active` : ''}
+            <div style={{ fontWeight: 600, color: 'var(--accent-deep)', textTransform: 'capitalize' }}>{tier} plan</div>
+            <div className="meta" style={{ marginTop: 2 }}>
+              {pass
+                ? `Active until ${dateFmt.format(new Date(pass.expiresAt))} — then reverts to Free`
+                : tier === 'free'
+                  ? 'Upgrade for more recordings, longer clips, and Improve again.'
+                  : 'Active subscription.'}
             </div>
-            {pass && <div className="meta" style={{ marginTop: 2 }}>Booster until {new Date(pass.expiresAt).toLocaleString()}</div>}
           </div>
           <Link href="/plans" className="btn btn-primary btn-sm"><Icon name="spark" size={15} /> Manage plan</Link>
+        </div>
+
+        {/* Purchases */}
+        <span className="eyebrow">Purchases</span>
+        <div style={{ margin: '12px 0 32px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {orders.isLoading ? (
+            <div className="animate-pulse" style={{ height: 56, background: 'var(--surface-2)', borderRadius: 'var(--r-sm)' }} />
+          ) : paidOrders.length === 0 ? (
+            <div className="meta" style={{ padding: '10px 2px' }}>No purchases yet. Plans and boosters you buy will appear here.</div>
+          ) : (
+            paidOrders.map((o) => (
+              <div key={o.id} className="row between" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)' }}>
+                <div className="grow" style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>
+                    {o.level} · {o.days} day{o.days > 1 ? 's' : ''}
+                  </div>
+                  <div className="meta" style={{ marginTop: 2 }}>{dateFmt.format(new Date(o.paidAt ?? o.createdAt))}</div>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--ink-2)' }}>₹{(o.amount / 100).toLocaleString('en-IN')}</span>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Usage metrics */}
