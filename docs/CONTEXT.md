@@ -163,5 +163,12 @@ Founder tested the live app (Phases 1–4): "Overall it is fine with minor bugs"
 
 **Decision:** Phase 5 polish complete (autosave). FTS deferred. See `docs/RELEASE_PLAN.md` for the path to launch.
 
+## Phase 6 — Observability, dev deploy, payments — BUILT (2026-06-22 → 23)
+- **Observability (all env-gated, no-op without keys):** PostHog (product analytics, EU, `/ingest` reverse proxy for ad-blockers), Sentry (errors; fixed the env-load + Next 15.1.4 client-init bugs), Resend (transactional email), Langfuse (Gemini LLM tracing). Docs: `ANALYTICS.md`, `OBSERVABILITY.md`, `AI_MONITORING.md`.
+- **Security/quality:** Next.js 15.1.4 → 15.5.19 (CVE), UUID route-param validation (A5), frontend unit-test suite (was 0).
+- **Dev deploy:** Vercel (frontend) + Render (backend, Docker) + existing dev Supabase. `main`/`develop` branches, CI on PRs. Doc: `DEPLOYMENT.md`.
+- **UI fixes:** real master logo in `Brand`; signed-in app moved to `/home` (`/` = public landing, redirects when authed); sidebar folder list scrolls with pinned footer; toast dark-mode colors; on-brand motion (scroll-reveal, card spotlight, hero glow).
+- **Payments — Razorpay (test mode), Free/Pro/Enterprise:** tiers renamed (`basic`→`pro`, `pro`→`enterprise`); one-time orders → server-verified (HMAC) → timed pass grants; repurchase **extends** (no stacking); `payments` table + order history + expiry on Account/Plans. Doc: `docs/PAYMENTS.md`; see [[nenap-monetization-plan]].
+
 ## Decision rule for the future
 When a request conflicts with an approved decision here, **stop and confirm** rather than silently override. Update this log whenever a decision is made or changed.
