@@ -68,7 +68,7 @@ export function NoteView({ note: initial }: { note: Note }) {
   async function handleDelete() {
     await deleteNote.mutateAsync(note.id);
     toast.show('Note deleted');
-    router.push('/');
+    router.push('/home');
   }
 
   function handleImprove() {

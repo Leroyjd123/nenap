@@ -21,11 +21,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ show }}>
       {children}
       {message && (
-        <div
-          className="fixed left-1/2 bottom-6 -translate-x-1/2 z-40 flex items-center gap-2.5
-                     bg-ink text-white text-[13px] font-medium px-4 py-2.5 rounded-full shadow-2"
-        >
-          <span className="text-[#a8c79c]">✓</span>
+        <div className="toast" role="status" aria-live="polite">
+          <span style={{ color: '#a8c79c' }}>✓</span>
           {message}
         </div>
       )}

@@ -161,8 +161,14 @@ body {
 
 /* ===================== shells ===================== */
 .d-shell { display: grid; grid-template-columns: 220px 1fr; height: 100%; min-height: 100vh; }
-.d-side { background: var(--surface-2); border-right: 1px solid var(--line); padding: 18px 14px; display: flex; flex-direction: column; gap: 3px; }
+.d-side { background: var(--surface-2); border-right: 1px solid var(--line); padding: 18px 14px; display: flex; flex-direction: column; gap: 3px; height: 100vh; position: sticky; top: 0; overflow: hidden; }
+.d-side-brand { padding: 4px 8px 16px; flex: none; }
+/* Folder list takes the slack and scrolls; the footer stays pinned. */
+.d-side-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.d-side-foot { flex: none; display: flex; flex-direction: column; gap: 3px; padding-top: 6px; }
 .d-side .brand { font-size: 23px; padding: 4px 8px 16px; }
+/* Logo lockup is a fixed sage asset; lift it slightly on the warm dark background. */
+:root[data-theme='dark'] .brand-logo { filter: brightness(1.12) saturate(1.04); }
 .side-lab { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-3); padding: 14px 8px 6px; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 9px; border-radius: var(--r-sm); color: var(--ink-2); cursor: pointer; font-size: 14px; transition: 0.14s; border: none; background: none; text-align: left; width: 100%; }
 .nav-item:hover { background: color-mix(in oklab, var(--ink) 5%, transparent); color: var(--ink); }

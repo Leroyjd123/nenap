@@ -60,8 +60,8 @@ function Account() {
   return (
     <main className="screen" style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <header className="row between" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px var(--pad)', borderBottom: '1px solid var(--line)' }}>
-        <Link href="/" className="btn btn-ghost btn-sm" aria-label="Back to app"><Icon name="back" size={16} /> Back</Link>
-        <Link href="/" aria-label="Nenap home"><Brand className="text-[20px]" /></Link>
+        <Link href="/home" className="btn btn-ghost btn-sm" aria-label="Back to app"><Icon name="back" size={16} /> Back</Link>
+        <Link href="/home" aria-label="Nenap home"><Brand className="text-[20px]" /></Link>
         <ThemeToggle />
       </header>
 

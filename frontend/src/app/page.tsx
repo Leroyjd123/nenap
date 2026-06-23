@@ -1,15 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Dashboard } from '@/components/dashboard';
 import { LandingPage } from '@/components/landing-page';
 import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-session';
 import { clearUrlParams, readAuthError } from '@/lib/auth-error';
 
-export default function HomePage() {
+export default function RootPage() {
+  const router = useRouter();
   const { session, loading } = useSession();
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -22,7 +23,12 @@ export default function HomePage() {
     }
   }, []);
 
-  if (loading) {
+  // Signed-in users belong in the app at /home; / is the public landing.
+  useEffect(() => {
+    if (!loading && session && !authError) router.replace('/home');
+  }, [loading, session, authError, router]);
+
+  if (loading || (session && !authError)) {
     return (
       <main className="min-h-screen grid place-items-center">
         <div className="eyebrow animate-pulse">Loading…</div>
@@ -51,9 +57,6 @@ export default function HomePage() {
     );
   }
 
-  if (!session) {
-    return <LandingPage />;
-  }
-
-  return <Dashboard email={session.user.email ?? undefined} />;
+  // Signed-out: the public marketing homepage.
+  return <LandingPage />;
 }

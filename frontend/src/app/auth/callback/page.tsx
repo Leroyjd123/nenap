@@ -41,7 +41,7 @@ export default function AuthCallbackPage() {
 
         setState('success');
         setMessage('You’re all set.');
-        window.setTimeout(() => router.replace('/'), 900);
+        window.setTimeout(() => router.replace('/home'), 900);
       } catch (e) {
         setState('error');
         setMessage(e instanceof Error ? e.message : 'Could not confirm your account.');

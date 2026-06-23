@@ -66,7 +66,7 @@ export default function LoginPage() {
         setError(humanizeAuthError(authError.message));
         return;
       }
-      router.push('/');
+      router.push('/home');
     } finally {
       setBusy(false);
     }
@@ -96,14 +96,14 @@ export default function LoginPage() {
           setSentTo(email);
           return;
         }
-        router.push('/');
+        router.push('/home');
       } else {
         const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) {
           setError(humanizeAuthError(authError.message));
           return;
         }
-        router.push('/');
+        router.push('/home');
       }
     } finally {
       setBusy(false);

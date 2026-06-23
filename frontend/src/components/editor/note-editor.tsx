@@ -143,7 +143,7 @@ export function NoteEditor({ note }: { note?: Note }) {
       if (wasRecording) {
         // Async: processing runs in the background — don't block on it.
         toast.show('Saved — improving your note in the background');
-        router.push('/');
+        router.push('/home');
       } else {
         toast.show(note ? 'Note saved' : 'Note created');
         router.push(`/notes/${id}`);

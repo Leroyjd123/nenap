@@ -37,62 +37,68 @@ export function AppShell({ children, top, email, folders, activeFolderId, onSele
       {/* ===== Desktop ===== */}
       <div className="d-shell hidden md:grid">
         <aside className="d-side">
-          <div style={{ padding: '4px 8px 16px', cursor: 'pointer' }} onClick={() => onSelectFolder(undefined)}>
+          <div className="d-side-brand" style={{ cursor: 'pointer' }} onClick={() => onSelectFolder(undefined)}>
             <Brand className="text-[23px]" />
           </div>
-          <div className="side-lab">Folders</div>
-          <button className={cn('nav-item', !activeFolderId && 'on')} onClick={() => onSelectFolder(undefined)}>
-            <Icon name="home" size={17} />
-            <span className="grow" style={{ flex: 1 }}>All notes</span>
-          </button>
-          {folders.map((f) => (
-            <button
-              key={f.id}
-              className={cn('nav-item', activeFolderId === f.id && 'on')}
-              onClick={() => onSelectFolder(f.id)}
-            >
-              <Icon name="folder" size={17} />
-              <span className="grow" style={{ flex: 1 }}>{f.name}</span>
-              {f.noteCount !== undefined && <span className="ct">{f.noteCount}</span>}
-            </button>
-          ))}
-          <button className="nav-item nav-add" onClick={() => setFolderModal(true)}>
-            <Icon name="plus" size={16} /> New folder
-          </button>
 
-          <div className="grow" style={{ flex: 1 }} />
-          <button className="nav-item" onClick={() => router.push('/plans')}>
-            <Icon name="spark" size={17} />
-            <span className="grow" style={{ flex: 1 }}>Plans &amp; boosters</span>
-          </button>
-          <div className="row" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button className="nav-item" style={{ flex: 1 }} onClick={() => router.push('/help')}>
-              <Icon name="doc" size={17} />
-              <span className="grow" style={{ flex: 1 }}>Help &amp; policies</span>
+          {/* Folder list scrolls on its own so the footer below never gets pushed off. */}
+          <div className="d-side-scroll">
+            <div className="side-lab">Folders</div>
+            <button className={cn('nav-item', !activeFolderId && 'on')} onClick={() => onSelectFolder(undefined)}>
+              <Icon name="home" size={17} />
+              <span className="grow" style={{ flex: 1 }}>All notes</span>
             </button>
-            <ThemeToggle />
+            {folders.map((f) => (
+              <button
+                key={f.id}
+                className={cn('nav-item', activeFolderId === f.id && 'on')}
+                onClick={() => onSelectFolder(f.id)}
+              >
+                <Icon name="folder" size={17} />
+                <span className="grow truncate" style={{ flex: 1 }}>{f.name}</span>
+                {f.noteCount !== undefined && <span className="ct">{f.noteCount}</span>}
+              </button>
+            ))}
+            <button className="nav-item nav-add" onClick={() => setFolderModal(true)}>
+              <Icon name="plus" size={16} /> New folder
+            </button>
           </div>
-          <hr className="hr" style={{ margin: '8px 4px' }} />
-          <div className="relative">
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="nav-item"
-              style={{ gap: 9 }}
-            >
-              <span className="av">{initial}</span>
-              <span className="grow truncate" style={{ flex: 1, fontSize: 13, color: 'var(--ink-2)' }}>
-                {email ?? 'Account'}
-              </span>
-              <Icon name="chevD" size={14} />
+
+          {/* Pinned footer — always visible regardless of how many folders exist. */}
+          <div className="d-side-foot">
+            <button className="nav-item" onClick={() => router.push('/plans')}>
+              <Icon name="spark" size={17} />
+              <span className="grow" style={{ flex: 1 }}>Plans &amp; boosters</span>
             </button>
-            {menuOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 bg-surface border border-line-2 rounded-sm shadow-2 p-1">
-                <button className="nav-item" onClick={() => router.push('/account')}>
-                  <Icon name="home" size={16} /> Account
-                </button>
-                <button className="nav-item" onClick={logout}>Log out</button>
-              </div>
-            )}
+            <div className="row" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button className="nav-item" style={{ flex: 1 }} onClick={() => router.push('/help')}>
+                <Icon name="doc" size={17} />
+                <span className="grow" style={{ flex: 1 }}>Help &amp; policies</span>
+              </button>
+              <ThemeToggle />
+            </div>
+            <hr className="hr" style={{ margin: '8px 4px' }} />
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="nav-item"
+                style={{ gap: 9 }}
+              >
+                <span className="av">{initial}</span>
+                <span className="grow truncate" style={{ flex: 1, fontSize: 13, color: 'var(--ink-2)' }}>
+                  {email ?? 'Account'}
+                </span>
+                <Icon name="chevD" size={14} />
+              </button>
+              {menuOpen && (
+                <div className="absolute bottom-full left-0 right-0 mb-1 bg-surface border border-line-2 rounded-sm shadow-2 p-1">
+                  <button className="nav-item" onClick={() => router.push('/account')}>
+                    <Icon name="home" size={16} /> Account
+                  </button>
+                  <button className="nav-item" onClick={logout}>Log out</button>
+                </div>
+              )}
+            </div>
           </div>
         </aside>
 
