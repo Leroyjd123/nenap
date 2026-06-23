@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { Folder, NoteSummary } from '@nenap/types';
 import { Icon } from '@/components/ui/icon';
+import { spotlightMove } from '@/lib/spotlight';
 
 const dateFmt = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' });
 
@@ -51,7 +52,7 @@ export function NoteCard({ note, folders }: { note: NoteSummary; folders?: Folde
   }
 
   return (
-    <Link href={`/notes/${note.id}`} className="note-card">
+    <Link href={`/notes/${note.id}`} className="note-card spotlight" onMouseMove={spotlightMove}>
       {inner}
     </Link>
   );

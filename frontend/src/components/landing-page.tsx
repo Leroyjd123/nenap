@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
 import { Icon } from '@/components/ui/icon';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Reveal } from '@/components/ui/reveal';
+import { spotlightMove } from '@/lib/spotlight';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 
 const FEATURES = [
@@ -100,18 +102,18 @@ export function LandingPage() {
         {/* Features */}
         <section className="lp-section">
           <div className="lp-wrap">
-            <div className="lp-section-head">
+            <Reveal className="lp-section-head">
               <span className="eyebrow">What it does</span>
               <h2>Everything you capture, kept gently</h2>
               <p>Notes are primary, recording is supportive, and the AI stays invisible.</p>
-            </div>
-            <div className="lp-grid stagger">
-              {FEATURES.map((f) => (
-                <div key={f.title} className="feature-card">
+            </Reveal>
+            <div className="lp-grid">
+              {FEATURES.map((f, i) => (
+                <Reveal key={f.title} className="feature-card spotlight" delay={i * 70} onMouseMove={spotlightMove}>
                   <div className="fc-icon"><Icon name={f.icon} size={20} /></div>
                   <h3>{f.title}</h3>
                   <p>{f.body}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -120,21 +122,21 @@ export function LandingPage() {
         {/* Purpose / how it works */}
         <section className="lp-section">
           <div className="lp-wrap">
-            <div className="lp-section-head">
+            <Reveal className="lp-section-head">
               <span className="eyebrow">Why Nenap</span>
               <h2>Made for staying present</h2>
               <p>
                 Meetings, lectures, sudden ideas — capturing them shouldn’t pull you out of the moment.
                 Nenap does the remembering so you can keep listening and thinking.
               </p>
-            </div>
+            </Reveal>
             <div className="lp-steps">
-              {STEPS.map((s) => (
-                <div key={s.n} className="lp-step">
+              {STEPS.map((s, i) => (
+                <Reveal key={s.n} className="lp-step" delay={i * 70}>
                   <div className="num">{s.n}</div>
                   <h3>{s.title}</h3>
                   <p>{s.body}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -142,14 +144,14 @@ export function LandingPage() {
 
         {/* Closing CTA */}
         <section className="lp-section" style={{ textAlign: 'center' }}>
-          <div className="lp-wrap">
+          <Reveal className="lp-wrap">
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 'clamp(24px, 4vw, 32px)', margin: 0 }}>
               The space is yours when you’re ready.
             </h2>
             <div className="lp-cta">
               <Link href="/login"><Button size="lg">Create your account</Button></Link>
             </div>
-          </div>
+          </Reveal>
         </section>
       </main>
 
