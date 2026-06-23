@@ -16,7 +16,10 @@ export function initAnalytics() {
   if (started || !isAnalyticsConfigured || typeof window === 'undefined') return;
   started = true;
   posthog.init(env.posthogKey, {
-    api_host: env.posthogHost,
+    // Same-origin reverse proxy (see next.config rewrites) so ad-blockers can't
+    // drop events. ui_host points at the real PostHog app for toolbar/links.
+    api_host: '/ingest',
+    ui_host: env.posthogHost.replace('.i.posthog.com', '.posthog.com'),
     person_profiles: 'identified_only',
     // We send $pageview manually on route change (Next App Router soft nav).
     capture_pageview: false,
