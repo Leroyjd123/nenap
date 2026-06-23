@@ -36,6 +36,11 @@ export const envSchema = z.object({
   LANGFUSE_PUBLIC_KEY: z.string().default(''),
   LANGFUSE_SECRET_KEY: z.string().default(''),
   LANGFUSE_BASEURL: z.string().default('https://cloud.langfuse.com'),
+  // Razorpay payments. Optional — checkout endpoints 503 until configured. Secret is
+  // server-only; the key id is also exposed to the client (NEXT_PUBLIC_RAZORPAY_KEY_ID).
+  RAZORPAY_KEY_ID: z.string().default(''),
+  RAZORPAY_KEY_SECRET: z.string().default(''),
+  RAZORPAY_WEBHOOK_SECRET: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;

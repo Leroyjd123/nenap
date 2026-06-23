@@ -1,6 +1,7 @@
 import { Body, Controller, ForbiddenException, Get, HttpCode, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { GrantPassInput, SetPlanInput } from '@nenap/types';
+import { CreateOrderInput, GrantPassInput, SetPlanInput, VerifyPaymentInput } from '@nenap/types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthUser } from '../auth/auth-user';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
@@ -42,6 +43,27 @@ export class BillingController {
   ) {
     this.assertDev();
     await this.billing.grantPass(user, body.days, body.level);
+  }
+
+  /** Create a Razorpay order for a SKU. Client opens Checkout with the returned order. */
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @Post('checkout/order')
+  async createOrder(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(CreateOrderInput)) body: CreateOrderInput,
+  ) {
+    return this.billing.createCheckoutOrder(user, body.sku);
+  }
+
+  /** Verify a completed Checkout server-side and grant the purchased plan/booster. */
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @Post('checkout/verify')
+  @HttpCode(204)
+  async verify(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(VerifyPaymentInput)) body: VerifyPaymentInput,
+  ) {
+    await this.billing.verifyAndGrant(user, body);
   }
 
   private assertDev(): void {

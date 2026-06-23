@@ -2,19 +2,19 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
-import type { Plan } from '@nenap/types';
+import type { CheckoutSku, Plan } from '@nenap/types';
 import { AuthGuard } from '@/components/auth-guard';
 import { Brand } from '@/components/brand';
 import { Footer } from '@/components/footer';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { useToast } from '@/components/ui/toast';
-import { useEntitlements, useGrantPass, useSetPlan } from '@/lib/queries';
+import { useEntitlements } from '@/lib/queries';
+import { useCheckout } from '@/hooks/use-checkout';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 import { capture } from '@/lib/analytics';
 
-const TIERS: { plan: Plan; name: string; price: string; features: string[] }[] = [
+const TIERS: { plan: Plan; name: string; price: string; per?: string; sku?: CheckoutSku; features: string[] }[] = [
   {
     plan: 'free',
     name: 'Free',
@@ -24,50 +24,38 @@ const TIERS: { plan: Plan; name: string; price: string; features: string[] }[] =
   {
     plan: 'basic',
     name: 'Basic',
-    price: '—',
+    price: '₹149',
+    per: '30 days',
+    sku: 'basic_30d',
     features: ['Everything in Free', '~10 recordings / day', 'Up to 30-minute recordings', '“Improve again” regeneration', 'File uploads · 2 GB storage'],
   },
   {
     plan: 'pro',
     name: 'Pro',
-    price: '—',
+    price: '₹399',
+    per: '30 days',
+    sku: 'pro_30d',
     features: ['Everything in Basic', 'Unlimited recordings', 'Up to 60-minute recordings', '20 GB storage', 'Priority processing'],
   },
 ];
 
-const BOOSTERS: { days: 1 | 3 | 5; label: string }[] = [
-  { days: 1, label: '1 day' },
-  { days: 3, label: '3 days' },
-  { days: 5, label: '5 days' },
+const BOOSTERS: { label: string; price: string; sku: CheckoutSku }[] = [
+  { label: '1 day', price: '₹29', sku: 'booster_1d' },
+  { label: '3 days', price: '₹69', sku: 'booster_3d' },
+  { label: '5 days', price: '₹99', sku: 'booster_5d' },
 ];
 
 function Plans() {
   useDocumentTitle('Plans — Nenap');
   useEffect(() => { capture('plan_viewed'); }, []);
-  const toast = useToast();
   const ent = useEntitlements();
-  const setPlan = useSetPlan();
-  const grantPass = useGrantPass();
+  const { checkout, pendingSku } = useCheckout();
 
   const plan = ent.data?.plan ?? 'free';
   const tier = ent.data?.tier ?? 'free';
   const usage = ent.data?.usage.recordingsToday ?? 0;
   const cap = ent.data?.limits.recordingsPerDay ?? null;
   const pass = ent.data?.activePass ?? null;
-
-  function choose(p: Plan) {
-    setPlan.mutate(p, {
-      onSuccess: () => toast.show(`Switched to ${p} (dev)`),
-      onError: () => toast.show('Could not switch plan'),
-    });
-  }
-
-  function boost(days: 1 | 3 | 5) {
-    grantPass.mutate(days, {
-      onSuccess: () => toast.show(`Booster active — Pro for ${days} day${days > 1 ? 's' : ''} (dev)`),
-      onError: () => toast.show('Could not activate booster'),
-    });
-  }
 
   return (
     <main className="screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
@@ -106,12 +94,14 @@ function Plans() {
         {/* Tiers */}
         <div className="lp-grid" style={{ marginBottom: 40 }}>
           {TIERS.map((t) => {
-            const current = plan === t.plan;
+            const current = tier === t.plan;
             return (
               <div key={t.plan} className="feature-card" style={current ? { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px var(--accent), var(--shadow-1)' } : undefined}>
                 <div className="row between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <h3 style={{ textTransform: 'capitalize' }}>{t.name}</h3>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--ink-2)' }}>{t.price}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--ink-2)' }}>
+                    {t.price}{t.per ? <span style={{ fontSize: 11, color: 'var(--ink-3)' }}> / {t.per}</span> : ''}
+                  </span>
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
                   {t.features.map((f) => (
@@ -123,11 +113,11 @@ function Plans() {
                 <Button
                   size="block"
                   variant={current ? 'soft' : 'primary'}
-                  disabled={current}
-                  loading={setPlan.isPending && setPlan.variables === t.plan}
-                  onClick={() => choose(t.plan)}
+                  disabled={current || !t.sku}
+                  loading={!!t.sku && pendingSku === t.sku}
+                  onClick={() => t.sku && checkout(t.sku)}
                 >
-                  {current ? 'Current plan' : `Choose ${t.name}`}
+                  {current ? 'Current plan' : t.sku ? `Get ${t.name} · ${t.price}` : 'Free forever'}
                 </Button>
               </div>
             );
@@ -141,7 +131,7 @@ function Plans() {
         </p>
         <div className="lp-grid" style={{ marginBottom: 32 }}>
           {BOOSTERS.map((b) => (
-            <div key={b.days} className="feature-card">
+            <div key={b.sku} className="feature-card">
               <div className="fc-icon"><Icon name="spark" size={20} /></div>
               <h3>Pro for {b.label}</h3>
               <p>Unlimited recordings, file uploads, and Improve again for {b.label}.</p>
@@ -149,17 +139,17 @@ function Plans() {
                 size="block"
                 variant="soft"
                 style={{ marginTop: 14 }}
-                loading={grantPass.isPending && grantPass.variables === b.days}
-                onClick={() => boost(b.days)}
+                loading={pendingSku === b.sku}
+                onClick={() => checkout(b.sku)}
               >
-                Activate {b.label}
+                Get Pro for {b.label} · {b.price}
               </Button>
             </div>
           ))}
         </div>
 
         <p className="meta">
-          Payments aren’t wired up yet — these buttons activate plans and boosters directly for testing. Real checkout is coming.
+          Secure payments by Razorpay. Currently in <strong>test mode</strong> — use a Razorpay test card (e.g. 4111&nbsp;1111&nbsp;1111&nbsp;1111, any future expiry/CVV); no real charge is made.
         </p>
       </div>
 

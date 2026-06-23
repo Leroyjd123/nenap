@@ -36,3 +36,31 @@ export type SetPlanInput = z.infer<typeof SetPlanInput>;
 
 export const GrantPassInput = z.object({ days: BoosterDays, level: Plan.default('pro') });
 export type GrantPassInput = z.infer<typeof GrantPassInput>;
+
+/** Purchasable items. Boosters grant Pro for N days; plans grant a tier for 30 days. */
+export const CheckoutSku = z.enum(['booster_1d', 'booster_3d', 'booster_5d', 'basic_30d', 'pro_30d']);
+export type CheckoutSku = z.infer<typeof CheckoutSku>;
+
+/** Client asks the server to create a Razorpay order for a SKU (amount is server-set). */
+export const CreateOrderInput = z.object({ sku: CheckoutSku });
+export type CreateOrderInput = z.infer<typeof CreateOrderInput>;
+
+/** What the client needs to open Razorpay Checkout. */
+export const CreateOrderResponse = z.object({
+  orderId: z.string(),
+  amount: z.number().int(), // paise
+  currency: z.string(),
+  keyId: z.string(), // Razorpay public key id
+  sku: CheckoutSku,
+  label: z.string(),
+});
+export type CreateOrderResponse = z.infer<typeof CreateOrderResponse>;
+
+/** Returned by Razorpay Checkout, verified server-side before anything is granted. */
+export const VerifyPaymentInput = z.object({
+  sku: CheckoutSku,
+  razorpayOrderId: z.string().min(1),
+  razorpayPaymentId: z.string().min(1),
+  razorpaySignature: z.string().min(1),
+});
+export type VerifyPaymentInput = z.infer<typeof VerifyPaymentInput>;
